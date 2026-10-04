@@ -83,7 +83,7 @@ bruce_decompose <- function(fit, grid = NULL, domain = NULL, dates = NULL, cap =
     by_covariate = lapply(per_cov, one_layer),
     day_effect = stats::setNames(comps$day[g_idx, 1], as.character(dates)),
     intercept = beta[["intercept"]],
-    variance = do.call(rbind, var_rows),
+    variance = tibble::as_tibble(do.call(rbind, var_rows)),
     stations = st, dates = dates),
     class = "bruce_decomposition")
 }

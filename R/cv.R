@@ -27,7 +27,8 @@
 #' @param verbose Print progress.
 #'
 #' @return An object of class `bruce_cv` with per-observation `predictions`,
-#'   per-fold `folds` (scores and fit status) and `overall` scores.
+#'   per-fold `folds` (scores and fit status) and `overall` scores, all as
+#'   tibbles.
 #' @export
 bruce_cv <- function(d, mesh, spec = bruce_spec(), window = NULL,
                      scheme = c("lso", "lro"), regions = NULL, region_col = NULL,
@@ -131,7 +132,8 @@ bruce_cv <- function(d, mesh, spec = bruce_spec(), window = NULL,
   by_fold <- do.call(rbind, lapply(split(pred, pred$fold), function(p) cbind(fold = p$fold[1], score(p))))
   folds_df <- merge(info, by_fold, by = "fold", all.x = TRUE)
 
-  structure(list(predictions = pred, folds = folds_df, overall = score(pred),
+  structure(list(predictions = tibble::as_tibble(pred), folds = tibble::as_tibble(folds_df),
+                 overall = tibble::as_tibble(score(pred)),
                  scheme = scheme, level = level, days = days),
             class = "bruce_cv")
 }

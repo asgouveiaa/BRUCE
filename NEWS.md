@@ -12,6 +12,9 @@ Primeira versão. Funções:
   o range estimado) e `bruce_check()`.
 * Uso do ajuste: `bruce_predict()`, `bruce_decompose()` com `plot()`,
   `bruce_zonal()`.
+* Saídas em tabela são tibbles (`bruce_cv()`, `bruce_zonal()`,
+  `bruce_decompose()$variance`); `as_tibble()` converte predição e
+  decomposição em tabela longa (célula × dia) para `dplyr`/`ggplot2`.
 * Validação: `bruce_cv()` (LSO e LRO, CRPS, cobertura, checkpoints) e
   `bruce_simulate()` (cidade sintética).
 

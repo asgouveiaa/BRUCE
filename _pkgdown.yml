@@ -37,6 +37,7 @@ reference:
   - bruce_decompose
   - plot.bruce_decomposition
   - bruce_zonal
+  - as_tibble.bruce
 - title: "Validation"
   contents:
   - bruce_cv
@@ -44,3 +45,4 @@ reference:
 - title: internal
   contents:
   - bruce-package
+  - reexports

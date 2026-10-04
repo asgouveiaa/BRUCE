@@ -26,7 +26,8 @@ Imports:
     Matrix,
     sf,
     stats,
-    terra
+    terra,
+    tibble
 Suggests:
     INLA (>= 24.0),
     knitr,

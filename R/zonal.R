@@ -12,7 +12,7 @@
 #'   weights within a zone matter.
 #' @param probs Quantiles of the zonal mean (only with samples).
 #'
-#' @return A data frame with one row per zone and date: `mean` and, with
+#' @return A tibble with one row per zone and date: `mean` and, with
 #'   samples, `sd` and the requested quantiles of the zonal mean.
 #' @export
 bruce_zonal <- function(pred, zones, id_col, weights = NULL, probs = c(0.05, 0.95)) {
@@ -54,5 +54,5 @@ bruce_zonal <- function(pred, zones, id_col, weights = NULL, probs = c(0.05, 0.9
   out <- do.call(rbind, out)
   out[[id_col]] <- sf::st_drop_geometry(zones)[[id_col]][out$zid]
   out$zid <- NULL
-  out[, c(id_col, setdiff(names(out), id_col))]
+  tibble::as_tibble(out[, c(id_col, setdiff(names(out), id_col))])
 }

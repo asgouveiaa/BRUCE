@@ -79,3 +79,27 @@ test_that("na_value fills extraction gaps before standardisation", {
   expect_error(bruce_covariates(d, list(urb = half), na_value = c(svf = 0)), "Unknown covariate")
   expect_error(bruce_covariates(d, list(half)), "named")
 })
+
+test_that("predictions and decompositions convert to long tibbles", {
+  tmpl <- terra::rast(sim$covariates[[1]])
+  cells <- which(!is.na(terra::values(sim$covariates[[1]], mat = FALSE)))
+  dates <- as.Date(names(sim$truth))[1:2]
+  p <- structure(list(mean = sim$truth[[1:2]], sd = sim$truth[[1:2]] * 0 + 0.5,
+                      quantiles = list(q0.05 = sim$truth[[1:2]] - 1, q0.95 = sim$truth[[1:2]] + 1),
+                      cells = cells, template = tmpl, dates = dates, n_samples = 10),
+                 class = "bruce_prediction")
+  tb <- as_tibble(p)
+  expect_s3_class(tb, "tbl_df")
+  expect_equal(nrow(tb), 2 * length(cells))
+  expect_equal(names(tb), c("x", "y", "date", "mean", "sd", "q0.05", "q0.95"))
+  k <- which(tb$date == dates[2])[10]
+  expect_equal(tb$mean[k], terra::extract(sim$truth[[2]], cbind(tb$x[k], tb$y[k]))[1, 1])
+
+  dec <- structure(list(total = sim$truth[[1:2]], covariates = sim$covariates$urb,
+                        field = sim$truth[[1:2]] - 20,
+                        by_covariate = list(urb = sim$covariates$urb), dates = dates),
+                   class = "bruce_decomposition")
+  td <- as_tibble(dec)
+  expect_equal(names(td), c("x", "y", "date", "total", "covariates", "field", "cov_urb"))
+  expect_equal(nrow(td), 2 * length(cells))
+})

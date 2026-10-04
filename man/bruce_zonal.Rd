@@ -20,7 +20,7 @@ weights within a zone matter.}
 \item{probs}{Quantiles of the zonal mean (only with samples).}
 }
 \value{
-A data frame with one row per zone and date: \code{mean} and, with
+A tibble with one row per zone and date: \code{mean} and, with
 samples, \code{sd} and the requested quantiles of the zonal mean.
 }
 \description{

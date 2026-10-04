@@ -59,7 +59,8 @@ sampling; see \code{\link[=bruce_predict]{bruce_predict()}}).}
 }
 \value{
 An object of class \code{bruce_cv} with per-observation \code{predictions},
-per-fold \code{folds} (scores and fit status) and \code{overall} scores.
+per-fold \code{folds} (scores and fit status) and \code{overall} scores, all as
+tibbles.
 }
 \description{
 Refits the model with stations held out and scores predictions at the
