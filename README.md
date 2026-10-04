@@ -13,13 +13,13 @@ city-specific enters through a small data contract.
 
 For an observation of network *k* at station *i*, location *s*, day *t*:
 
-η = β₀ + δₖ + x(s)ᵀβ + uᵢ + dₜ + w(s, t)
+η = β₀ + δₖ + x(s)ᵀβ + uᵢ + wₜ + ξ(s, t)
 
 * **δₖ** — offset of a biased network (estimated only for networks declared `bias = TRUE`)
 * **x(s)ᵀβ** — spatial covariates (elevation, urban fraction, …)
 * **uᵢ** — iid station effect (persistent siting bias)
 * **dₜ** — city-wide daily AR(1) term
-* **w(s, t)** — Matérn SPDE field with AR(1) dependence between days
+* **ξ(s, t)** — Matérn SPDE field with AR(1) dependence between days
 
 Each network (and the background) has its own Gaussian likelihood with a
 fixed or PC-prior observation standard deviation. Windows (one month is the
