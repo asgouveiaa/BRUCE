@@ -1,4 +1,4 @@
-# bruce <img src="https://img.shields.io/badge/status-experimental-orange" align="right"/>
+# bruce <img src="man/figures/logo.png" align="right" height="139" alt="bruce logo" />
 
 **B**ayesian **R**io **U**rban **C**limate **E**stimator, generalised to any city.
 
