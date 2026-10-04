@@ -20,7 +20,7 @@ For an observation of network *k* at station *i*, location *s*, day *t*:
   declared `bias = TRUE`)
 - **x(s)ᵀβ** — spatial covariates (elevation, urban fraction, …)
 - **uᵢ** — iid station effect (persistent siting bias)
-- **dₜ** — city-wide daily AR(1) term
+- **wₜ** — city-wide daily AR(1) term
 - **ξ(s, t)** — Matérn SPDE field with AR(1) dependence between days
 
 Each network (and the background) has its own Gaussian likelihood with a
