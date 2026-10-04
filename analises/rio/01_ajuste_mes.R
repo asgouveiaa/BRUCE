@@ -1,9 +1,8 @@
 # ==================================================================
-# rio_adapter.R
+# 01_ajuste_mes.R
 # Fits one month of the Rio de Janeiro model with bruce, reproducing
 # modelo_9meses_median_max.R (the model of the SPDE article) as closely
-# as the package allows. Run it from ~/scratch/spde_paper so the
-# relative paths of the original scripts resolve.
+# as the package allows. Rode de dentro de analises/rio (caminhos em config.R).
 #
 # Correspondence with the original script:
 #   origem == "ofic" (except airports) -> source "official"  (bias = FALSE, sd 0.3)
@@ -22,25 +21,24 @@
 #   * the SVF standardisation uses distinct stations, not station-days.
 # Covariates are read from their native rasters (bruce >= 0.1.1), as in the
 # article; with inputs taken from the article's .rds the fit is identical
-# (see comparar_entradas_identicas.R).
+# (see 04_comparar_entradas_identicas.R).
 #
 # Runtime: about the same as one month of the original (~25-30 min).
-# Run in tmux:  Rscript rio_adapter.R > log_bruce_2025-01.log 2>&1
+# Run in tmux:  Rscript 01_ajuste_mes.R > log_bruce_2025-01.log 2>&1
 # ==================================================================
 
 library(bruce)
 library(terra)
 library(sf)
+source("config.R")
 
-source("~/scratch/spde_paper/query_meteorj_periodo.R")
-source("~/MEGA/cisc/era5_interp/com_aura_novo/funcoes downscaling ERA5 MRJ.R")
+source("query_meteorj_periodo.R")
+source(ERA5_FUNCOES)
 
 ANO <- 2025; MES <- 1; VAR <- "median"        # "median", "max" or "min"
 CRS_UTM  <- 31983
 AIRPORTS <- c("SBJR", "SBGL", "SBAF", "SBSC")
-DIR_ERA5 <- "~/MEGA/cisc/era5_interp/independente"
-DIR_OUT  <- "resultados_bruce"
-dir.create(DIR_OUT, showWarnings = FALSE)
+DIR_OUT  <- RES
 tag <- sprintf("%s_%d-%02d", VAR, ANO, MES)
 
 col_est  <- paste0(VAR, "_temperatura")
@@ -87,7 +85,7 @@ dem <- elevatr::get_elev_raster(locations = st_transform(area, 4326), z = 9, cli
   rast() |> project(paste0("EPSG:", CRS_UTM))
 dem[dem < 0] <- 0
 
-uso <- read_sf("~/MEGA/cisc/era5_interp/Uso_do_Solo_2019.shp")
+uso <- read_sf(USO_SOLO)
 classes_urbanas <- c("Áreas residenciais", "Áreas de comércio e serviços", "Áreas industriais",
                      "Áreas de transporte", "Áreas institucionais e de infraestrutura pública",
                      "Áreas de educação e saúde", "Favela")
@@ -140,14 +138,14 @@ dec  <- bruce_decompose(fit, grid = grid500, cap = FALSE,
 saveRDS(list(fit = fit, pred_mean = wrap(pred$mean), variance = dec$variance),
         file.path(DIR_OUT, sprintf("bruce_%s.rds", tag)))
 writeRaster(pred$mean, file.path(DIR_OUT, sprintf("bruce_pred_%s.tif", tag)), overwrite = TRUE)
-message("Saved to ", DIR_OUT, "/. Next: comparar_com_artigo.R")
+message("Saved to ", DIR_OUT, "/. Next: 02_comparar_com_artigo.R")
 
 # ---- optional: leave-region-out with CRPS (hours: 5 regions x ~25 min) -----
 # Mirrors calcular_crps_lro_2025.R: all networks removed in the held-out
 # region, official stations and airports scored, 200 samples, seed 42.
 RODAR_LRO <- FALSE
 if (RODAR_LRO) {
-  ap <- st_read("./malhas/ap_malha.gpkg", quiet = TRUE)
+  ap <- st_read(MALHA_AP, quiet = TRUE)
   ap$regiao <- substr(ap$AP_RESID, 1, 1)
   cv <- bruce_cv(d, mesh, spec, window = c(data_ini, data_fim), scheme = "lro",
                  regions = ap, region_col = "regiao",

@@ -1,28 +1,29 @@
 # ==================================================================
-# comparar_entradas_identicas.R
+# 04_comparar_entradas_identicas.R
 # Fits bruce on EXACTLY the inputs saved in the article's package for one
 # month (stations, ERA5 cells, standardised covariates and mesh), so the
 # only thing that differs from the article is the modelling code.
 #
 #   Range close to the article's  -> bruce reproduces the model; earlier
 #                                    differences come from the inputs
-#                                    (covariate rebuilding in rio_adapter.R).
+#                                    (covariate rebuilding in 01_ajuste_mes.R).
 #   Range still different         -> a real difference in the model code.
 #
-# Run from ~/scratch/spde_paper (about the same time as one month).
+# Rode de dentro de analises/rio (le os caminhos de config.R).
 # ==================================================================
 
 library(bruce)
 library(sf)
+source("config.R")
 
 VAR <- "median"; MES <- "2025-01"
-orig  <- readRDS(sprintf("resultados_9meses_median_max/pacote_mensal_independente_%s_%s.rds", VAR, MES))
+orig  <- readRDS(sprintf(file.path(ARTIGO, "pacote_mensal_independente_%s_%s.rds"), VAR, MES))
 fit_o <- orig$fit
 
 # ---- 0. Two cheap checks first ---------------------------------------------
 cat("Range posterior (artigo):\n")
 print(fit_o$summary.hyperpar["Range for s", c("mean", "sd", "0.025quant", "0.975quant")])
-novo <- readRDS(sprintf("resultados_bruce/bruce_%s_%s.rds", VAR, MES))
+novo <- readRDS(sprintf(file.path(RES, "bruce_%s_%s.rds"), VAR, MES))
 cat("Range posterior (bruce via rio_adapter):\n")
 print(novo$fit$inla$summary.hyperpar["Range for s", c("mean", "sd", "0.025quant", "0.975quant")])
 cat(sprintf("Vertices da malha: artigo %d | bruce %d\n\n", orig$mesh$n, novo$fit$mesh$n))

@@ -13,13 +13,13 @@ city-specific enters through a small data contract.
 
 For an observation of network *k* at station *i*, location *s*, day *t*:
 
-η = β₀ + δₖ + x(s)ᵀβ + uᵢ + wₜ + ξ(s, t)
+η = β₀ + δₖ + x(s)ᵀβ + uᵢ + dₜ + w(s, t)
 
 * **δₖ** — offset of a biased network (estimated only for networks declared `bias = TRUE`)
 * **x(s)ᵀβ** — spatial covariates (elevation, urban fraction, …)
 * **uᵢ** — iid station effect (persistent siting bias)
-* **wₜ** — city-wide daily AR(1) term
-* **ξ(s, t)** — Matérn SPDE field with AR(1) dependence between days
+* **dₜ** — city-wide daily AR(1) term
+* **w(s, t)** — Matérn SPDE field with AR(1) dependence between days
 
 Each network (and the background) has its own Gaussian likelihood with a
 fixed or PC-prior observation standard deviation. Windows (one month is the
@@ -77,5 +77,5 @@ attempts are kept in `fit$attempts`; `fit$status` records the outcome. See
 Version 0.1: daily temperature, independent windows. Planned: sub-daily
 resolution, humidity and heat index, bivariate fields.
 
-`inst/examples/rio_adapter.R` maps the original Rio de Janeiro inputs onto
+The `analises/` folder of the repository has the Rio de Janeiro and Berlin applications, mapping their inputs onto
 the contract.

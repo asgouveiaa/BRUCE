@@ -14,6 +14,12 @@ bruce_check <- function(fit) {
   }
   cat(sprintf("Range prior median: %.0f m (posterior mean range: %.0f m)\n", fit$range_prior,
               fit$attempts$range[nrow(fit$attempts)]))
+  mr <- fit$mesh_resolution
+  if (!is.null(mr) && is.finite(mr$ratio)) {
+    cat(sprintf("Mesh resolution: typical edge near the data %.0f m; range / edge = %.1f (%s)\n",
+                mr$edge, mr$ratio,
+                if (mr$ok) "ok" else sprintf("below %g: range estimate may depend on the mesh", mr$min_ratio)))
+  }
   print(fit$attempts, row.names = FALSE)
   invisible(fit$attempts)
 }

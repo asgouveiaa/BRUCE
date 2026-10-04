@@ -1,8 +1,8 @@
 # ==================================================================
-# comparar_com_artigo.R
-# Compares the bruce fit from rio_adapter.R with the article's saved fit
+# 02_comparar_com_artigo.R
+# Compares the bruce fit from 01_ajuste_mes.R with the article's saved fit
 # for the same month (modelo_9meses_median_max.R output). Run from
-# ~/scratch/spde_paper after rio_adapter.R.
+# analises/rio depois do 01_ajuste_mes.R.
 #
 # What "the same" means here: INLA results are not bit-identical between
 # runs and the adapter differs in a few small details (see its header),
@@ -13,12 +13,13 @@
 # ==================================================================
 
 library(terra)
+source("config.R")
 
 VAR <- "median"; MES <- "2025-01"
 tag <- sprintf("%s_%s", VAR, MES)
 
-orig  <- readRDS(sprintf("resultados_9meses_median_max/pacote_mensal_independente_%s_%s.rds", VAR, MES))
-novo  <- readRDS(sprintf("resultados_bruce/bruce_%s.rds", tag))
+orig  <- readRDS(sprintf(file.path(ARTIGO, "pacote_mensal_independente_%s_%s.rds"), VAR, MES))
+novo  <- readRDS(sprintf(file.path(RES, "bruce_%s.rds"), tag))
 fit_o <- orig$fit
 fit_n <- novo$fit$inla
 
@@ -54,7 +55,7 @@ cat("\n=== Hiperparametros ===\n"); print(hps, digits = 4, row.names = FALSE)
 cat("\nStatus do ajuste bruce:", novo$fit$status, "\n")
 
 # ---- 3. Daily maps -------------------------------------------------------
-pred_o <- read.csv(sprintf("resultados_9meses_median_max/predicao_mensal_independente_%s_%s.csv", VAR, MES))
+pred_o <- read.csv(sprintf(file.path(ARTIGO, "predicao_mensal_independente_%s_%s.csv"), VAR, MES))
 pred_o$data <- as.Date(pred_o$data)
 pred_n <- unwrap(novo$pred_mean)
 
@@ -77,7 +78,7 @@ pior <- mapas$data[which.max(mapas$rmse)]
 o <- pred_o[pred_o$data == pior, ]
 r_o <- rast(o[, c("x", "y", "pred")], type = "xyz", crs = crs(pred_n))
 r_n <- resample(pred_n[[as.character(pior)]], r_o, method = "near")
-png(sprintf("resultados_bruce/comparacao_%s.png", tag), width = 1500, height = 520, res = 110)
+png(sprintf(file.path(RES, "comparacao_%s.png"), tag), width = 1500, height = 520, res = 110)
 op <- par(mfrow = c(1, 3), mar = c(2, 2, 3, 5))
 rng <- range(c(values(r_o), values(r_n)), na.rm = TRUE)
 plot(r_o, main = sprintf("Artigo (%s)", pior), range = rng, col = hcl.colors(50, "YlOrRd", rev = TRUE))
@@ -85,4 +86,4 @@ plot(r_n, main = "bruce", range = rng, col = hcl.colors(50, "YlOrRd", rev = TRUE
 dd <- r_n - r_o; lim <- max(abs(values(dd)), na.rm = TRUE)
 plot(dd, main = "bruce - artigo", range = c(-lim, lim), col = hcl.colors(50, "Blue-Red 3"))
 par(op); dev.off()
-cat("Figura:", sprintf("resultados_bruce/comparacao_%s.png", tag), "\n")
+cat("Figura:", sprintf(file.path(RES, "comparacao_%s.png"), tag), "\n")

@@ -30,6 +30,15 @@
 #'   every attempt is recorded in `fit$attempts` and the outcome in
 #'   `fit$status`.
 #'
+#'   The mesh resolution is also checked against the estimated range: the
+#'   typical edge of the triangles that contain the data is compared with the
+#'   posterior mean range (`fit$mesh_resolution`). When the range is less than
+#'   five times that edge, a warning is issued: the field is poorly resolved
+#'   and the range estimate can change with the triangulation (in the Rio de
+#'   Janeiro application, two meshes of about 1,000 vertices built with the
+#'   same settings by different fmesher versions gave ranges of 7.7 and
+#'   4.1 km).
+#'
 #' @return An object of class `bruce_fit`.
 #' @export
 bruce_fit <- function(d, mesh, spec = bruce_spec(), window = NULL, theta_init = NULL,
@@ -87,8 +96,21 @@ bruce_fit <- function(d, mesh, spec = bruce_spec(), window = NULL, theta_init = 
     }
   }
 
+  obs_xy <- rbind(as.matrix(b$obs[, c("x", "y")]),
+                  if (!is.null(d$background)) as.matrix(d$background[, c("x", "y")]))
+  mres <- tryCatch(mesh_resolution(mesh, obs_xy, attempts[[length(attempts)]]$range),
+                   error = function(e) list(edge = NA_real_, range = NA_real_, ratio = NA_real_,
+                                            min_ratio = 5, ok = NA))
+  if (isTRUE(!mres$ok)) {
+    warning(sprintf(paste0(
+      "Estimated range (%.0f m) is only %.1f times the typical mesh edge near the data (%.0f m). ",
+      "The SPDE field is poorly resolved at this mesh, and the range estimate can change with ",
+      "the triangulation; consider a finer mesh (max_edge and cutoff of about range / 5). ",
+      "See bruce_check()."), mres$range, mres$ratio, mres$edge), call. = FALSE)
+  }
+
   structure(
-    list(inla = fit, data = d, mesh = mesh, spde = b$spde, spec = spec,
+    list(inla = fit, data = d, mesh = mesh, spde = b$spde, spec = spec, mesh_resolution = mres,
          days = b$days, station_ids = b$station_ids, cov_names = b$cov_names,
          bias_cols = b$bias_cols, blocks = b$blocks, range_prior = b$range_prior,
          group_rho_fixed = fixed_rho, drop_stations = drop_stations,
@@ -265,4 +287,32 @@ reset_theta <- function(fit, y_sd) {
   th[k_rho] <- rho_to_theta(0.8)
   if (length(k_sd) == 1) th[k_sd] <- log(y_sd)
   unname(th)
+}
+
+# Typical edge length of the mesh where the data are (median edge of the
+# triangles that contain observation locations), compared with the estimated
+# range. Rule of thumb for SPDE models: edges of about range / 5 or finer.
+mesh_resolution <- function(mesh, xy, range, min_ratio = 5) {
+  out <- list(edge = NA_real_, range = range, ratio = NA_real_, min_ratio = min_ratio, ok = NA)
+  tv <- tryCatch(mesh$graph$tv, error = function(e) NULL)
+  if (is.null(tv) || !is.finite(range)) return(out)
+  loc <- mesh$loc[, 1:2, drop = FALSE]
+  xy <- unique(xy)
+  tri <- tryCatch({
+    A <- fmesher::fm_basis(mesh, loc = xy)
+    unique(apply(as.matrix(A) > 0, 1, function(r) {
+      v <- which(r); hit <- which(apply(tv, 1, function(t) all(v %in% t)))
+      if (length(hit)) hit[1] else NA_integer_
+    }))
+  }, error = function(e) NULL)
+  tri <- tri[!is.na(tri)]
+  if (!length(tri)) tri <- seq_len(nrow(tv))
+  e <- unlist(lapply(tri, function(k) {
+    p <- loc[tv[k, ], , drop = FALSE]
+    c(sqrt(sum((p[1, ] - p[2, ])^2)), sqrt(sum((p[2, ] - p[3, ])^2)), sqrt(sum((p[3, ] - p[1, ])^2)))
+  }))
+  out$edge <- stats::median(e)
+  out$ratio <- range / out$edge
+  out$ok <- out$ratio >= min_ratio
+  out
 }

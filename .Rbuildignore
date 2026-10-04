@@ -3,3 +3,5 @@
 ^pkgdown$
 ^\.github$
 ^README\.Rmd$
+^analises$
+^PENDENCIAS\.md$

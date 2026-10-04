@@ -1,17 +1,18 @@
 # ==================================================================
-# comparar_malha.R
+# 05_comparar_malha.R
 # Rebuilds the mesh from the bruce fit's own points with the installed bruce
 # version and compares it with the article's mesh and with a mesh built by
 # INLA directly from the same points. Takes seconds.
-# Run from ~/scratch/spde_paper after installing bruce >= 0.1.2.
+# Rode de dentro de analises/rio (le os caminhos de config.R).
 # ==================================================================
 
 library(bruce)
 library(INLA)
+source("config.R")
 
 VAR <- "median"; MES <- "2025-01"
-orig <- readRDS(sprintf("resultados_9meses_median_max/pacote_mensal_independente_%s_%s.rds", VAR, MES))
-novo <- readRDS(sprintf("resultados_bruce/bruce_%s_%s.rds", VAR, MES))
+orig <- readRDS(sprintf(file.path(ARTIGO, "pacote_mensal_independente_%s_%s.rds"), VAR, MES))
+novo <- readRDS(sprintf(file.path(RES, "bruce_%s_%s.rds"), VAR, MES))
 d    <- novo$fit$data
 
 cat("bruce versao:", as.character(packageVersion("bruce")),

@@ -23,3 +23,14 @@ test_that("spec validates its inputs", {
   expect_error(bruce_spec(range_prior = "auto"), "range_prior")
   expect_error(bruce_spec(group_rho_fixed = 1), "group_rho_fixed")
 })
+
+test_that("mesh resolution compares range with edge length", {
+  # two right triangles of side 1000 m; median edge = 1000
+  m <- list(loc = cbind(c(0, 1000, 0, 1000), c(0, 0, 1000, 1000), 0),
+            graph = list(tv = rbind(c(1, 2, 3), c(2, 4, 3))))
+  r <- bruce:::mesh_resolution(m, cbind(500, 200), range = 3000)
+  expect_equal(r$edge, 1000)
+  expect_equal(r$ratio, 3)
+  expect_false(r$ok)
+  expect_true(bruce:::mesh_resolution(m, cbind(500, 200), range = 8000)$ok)
+})

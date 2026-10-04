@@ -1,30 +1,19 @@
-# bruce 0.1.2
+# bruce 0.1.0 (em desenvolvimento, repositório privado)
 
-* `bruce_mesh()` builds the domain boundary with INLA's non-convex hull
-  algorithm (as `INLA::inla.nonconvex.hull()`), so meshes match those of
-  `INLA::inla.mesh.2d()` from the same points. Before, older fmesher versions
-  produced a different (sf buffer) boundary, which changed the mesh and could
-  shift the estimated spatial range.
+Primeira versão. Funções:
 
-# bruce 0.1.1
+* Contrato de dados: `bruce_data()` (observações, estações, redes de
+  referência e enviesadas, background opcional) e `bruce_covariates()`
+  (cada covariável lida no próprio raster, na sua projeção e resolução;
+  `na_value` para áreas sem dado).
+* Modelo: `bruce_mesh()` (contorno com o mesmo algoritmo do INLA),
+  `bruce_spec()` (priors, termos, tratamento de colapso), `bruce_fit()`
+  (detecção do colapso do campo e aviso quando a malha é grossa demais para
+  o range estimado) e `bruce_check()`.
+* Uso do ajuste: `bruce_predict()`, `bruce_decompose()` com `plot()`,
+  `bruce_zonal()`.
+* Validação: `bruce_cv()` (LSO e LRO, CRPS, cobertura, checkpoints) e
+  `bruce_simulate()` (cidade sintética).
 
-* `bruce_covariates()` accepts a named list of rasters, each kept in its own
-  projection and resolution and read directly at stations and background
-  cells, with no resampling to a common grid. New `na_value` argument sets
-  the raw value used where a raster has no data (e.g. `c(urb = 0)`).
-* `bruce_predict()` and `bruce_decompose()` read each covariate from its
-  native raster: `resample = "near"` takes the raster's value at each grid
-  cell centre; `"average"` and `"bilinear"` project onto the grid.
-* Validated against the Rio de Janeiro article fit (January 2025, daily
-  median): with identical inputs, all fixed effects within 0.03 posterior sd
-  and spatial range 7682 m vs 7669 m.
-
-# bruce 0.1.0
-
-* First version: data contract (`bruce_data()`, `bruce_covariates()`),
-  mesh, model specification and fitting with collapse detection
-  (`bruce_mesh()`, `bruce_spec()`, `bruce_fit()`, `bruce_check()`),
-  prediction, decomposition and zonal aggregation (`bruce_predict()`,
-  `bruce_decompose()`, `bruce_zonal()`), leave-station-out and
-  leave-region-out validation with CRPS (`bruce_cv()`) and a synthetic
-  city simulator (`bruce_simulate()`).
+Registro da validação com o Rio de Janeiro (mediana, janeiro de 2025) em
+`analises/rio/README.md`.

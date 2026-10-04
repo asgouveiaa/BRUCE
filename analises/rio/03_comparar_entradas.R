@@ -1,18 +1,19 @@
 # ==================================================================
-# comparar_entradas.R
+# 03_comparar_entradas.R
 # Compares the INPUTS of the article's fit (saved .rds) with those of the
-# bruce fit from rio_adapter.R, without refitting anything: which stations
+# bruce fit from 01_ajuste_mes.R, without refitting anything: which stations
 # and days are in each, whether the observed values agree, whether the
 # covariates at stations and at ERA5 cells agree, and the mesh size.
-# Run from ~/scratch/spde_paper. Takes seconds.
+# Rode de dentro de analises/rio (le os caminhos de config.R).
 # ==================================================================
 
 library(sf)
 library(dplyr)
+source("config.R")
 
 VAR <- "median"; MES <- "2025-01"
-orig <- readRDS(sprintf("resultados_9meses_median_max/pacote_mensal_independente_%s_%s.rds", VAR, MES))
-novo <- readRDS(sprintf("resultados_bruce/bruce_%s_%s.rds", VAR, MES))
+orig <- readRDS(sprintf(file.path(ARTIGO, "pacote_mensal_independente_%s_%s.rds"), VAR, MES))
+novo <- readRDS(sprintf(file.path(RES, "bruce_%s_%s.rds"), VAR, MES))
 d    <- novo$fit$data
 
 # ---- 1. Stations and observations ------------------------------------------

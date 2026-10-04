@@ -4,3 +4,5 @@
 docs/
 *.tar.gz
 inst/doc
+analises/*/resultados/
+analises/*/*.log
