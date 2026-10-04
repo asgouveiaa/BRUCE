@@ -1,0 +1,39 @@
+Package: bruce
+Type: Package
+Title: Bayesian Urban Climate Estimation from Heterogeneous Station Networks
+Version: 0.1.0
+Authors@R: person("Ayrton", "Gouveia", email = "ayrtonsgouveia19@gmail.com",
+                  role = c("aut", "cre"))
+Description: Spatiotemporal interpolation of daily urban air temperature by
+    fusing observation networks of different quality (official stations,
+    airports, low-cost IoT sensors, citizen weather stations) with an optional
+    gridded background product such as a reanalysis. Each network enters with
+    its own Gaussian likelihood; networks declared as biased receive a fixed
+    offset and station-level random effects, and a Matern SPDE field evolving
+    day to day through an AR(1) structure captures the residual spatial signal.
+    Fitting uses R-INLA. The package also provides leave-station-out and
+    leave-region-out cross-validation with CRPS, detection of degenerate fits,
+    posterior prediction on a raster grid, zonal aggregation and a simulator
+    for synthetic cities. City-agnostic by design: all city-specific inputs
+    are declared through a small data contract.
+License: MIT + file LICENSE
+URL: https://asgouveiaa.github.io/bruce/, https://github.com/asgouveiaa/bruce
+BugReports: https://github.com/asgouveiaa/bruce/issues
+Encoding: UTF-8
+Depends: R (>= 4.1)
+Imports:
+    fmesher,
+    Matrix,
+    sf,
+    stats,
+    terra
+Suggests:
+    INLA (>= 24.0),
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0)
+Additional_repositories: https://inla.r-inla-download.org/R/stable
+Config/testthat/edition: 3
+VignetteBuilder: knitr
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.1

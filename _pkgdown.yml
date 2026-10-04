@@ -1,0 +1,46 @@
+url: https://asgouveiaa.github.io/bruce/
+
+template:
+  bootstrap: 5
+  bslib:
+    primary: "#B4442B"
+    base_font: {google: "Source Sans 3"}
+    heading_font: {google: "Source Sans 3"}
+    code_font: {google: "JetBrains Mono"}
+
+home:
+  title: "bruce: Bayesian urban climate estimation"
+  description: >
+    Daily urban temperature interpolation fusing official stations, airports,
+    low-cost sensors and reanalysis with SPDE-INLA.
+
+navbar:
+  structure:
+    left:  [intro, reference, articles, news]
+    right: [search, github]
+
+reference:
+- title: "Data"
+  desc: "Declare what the city has: observations, stations, networks, background and covariates."
+  contents:
+  - bruce_data
+  - bruce_covariates
+- title: "Model"
+  contents:
+  - bruce_mesh
+  - bruce_spec
+  - bruce_fit
+  - bruce_check
+- title: "Use the fit"
+  contents:
+  - bruce_predict
+  - bruce_decompose
+  - plot.bruce_decomposition
+  - bruce_zonal
+- title: "Validation"
+  contents:
+  - bruce_cv
+  - bruce_simulate
+- title: internal
+  contents:
+  - bruce-package

@@ -1,0 +1,24 @@
+# Written by hand to match the roxygen tags; regenerate with
+# roxygen2::roxygenise() once the dependencies are installed.
+
+export(bruce_check)
+export(bruce_covariates)
+export(bruce_cv)
+export(bruce_data)
+export(bruce_decompose)
+export(bruce_fit)
+export(bruce_mesh)
+export(bruce_predict)
+export(bruce_simulate)
+export(bruce_spec)
+export(bruce_zonal)
+
+S3method(print, bruce_data)
+S3method(print, bruce_fit)
+S3method(summary, bruce_fit)
+S3method(print, bruce_cv)
+S3method(print, bruce_prediction)
+S3method(print, bruce_decomposition)
+S3method(plot, bruce_decomposition)
+
+importFrom(stats, median, quantile, sd, rnorm, setNames)
