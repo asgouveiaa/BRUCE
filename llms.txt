@@ -120,6 +120,9 @@ and covariates.
   : Plot a decomposition
 - [`bruce_zonal()`](https://asgouveiaa.github.io/bruce/reference/bruce_zonal.md)
   : Aggregate predictions over zones
+- [`as_tibble(`*`<bruce_prediction>`*`)`](https://asgouveiaa.github.io/bruce/reference/as_tibble.bruce.md)
+  [`as_tibble(`*`<bruce_decomposition>`*`)`](https://asgouveiaa.github.io/bruce/reference/as_tibble.bruce.md)
+  : Prediction or decomposition as a long table
 
 ## Validation
 

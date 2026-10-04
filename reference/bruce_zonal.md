@@ -37,5 +37,5 @@ bruce_zonal(pred, zones, id_col, weights = NULL, probs = c(0.05, 0.95))
 
 ## Value
 
-A data frame with one row per zone and date: `mean` and, with samples,
-`sd` and the requested quantiles of the zonal mean.
+A tibble with one row per zone and date: `mean` and, with samples, `sd`
+and the requested quantiles of the zonal mean.

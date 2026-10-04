@@ -25,6 +25,13 @@ Primeira versão. Funções:
   [`bruce_decompose()`](https://asgouveiaa.github.io/bruce/reference/bruce_decompose.md)
   com [`plot()`](https://rdrr.io/r/graphics/plot.default.html),
   [`bruce_zonal()`](https://asgouveiaa.github.io/bruce/reference/bruce_zonal.md).
+- Saídas em tabela são tibbles
+  ([`bruce_cv()`](https://asgouveiaa.github.io/bruce/reference/bruce_cv.md),
+  [`bruce_zonal()`](https://asgouveiaa.github.io/bruce/reference/bruce_zonal.md),
+  `bruce_decompose()$variance`);
+  [`as_tibble()`](https://tibble.tidyverse.org/reference/as_tibble.html)
+  converte predição e decomposição em tabela longa (célula × dia) para
+  `dplyr`/`ggplot2`.
 - Validação:
   [`bruce_cv()`](https://asgouveiaa.github.io/bruce/reference/bruce_cv.md)
   (LSO e LRO, CRPS, cobertura, checkpoints) e

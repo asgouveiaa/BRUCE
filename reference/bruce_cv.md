@@ -91,4 +91,5 @@ bruce_cv(
 ## Value
 
 An object of class `bruce_cv` with per-observation `predictions`,
-per-fold `folds` (scores and fit status) and `overall` scores.
+per-fold `folds` (scores and fit status) and `overall` scores, all as
+tibbles.

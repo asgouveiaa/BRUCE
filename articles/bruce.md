@@ -121,6 +121,12 @@ plot(dec, date = "2025-01-03")   # total, covariate part, spatial field
 
 zones <- sf::st_sf(zone = "city", geometry = sf::st_geometry(sim$domain))
 bruce_zonal(pred, zones, "zone")
+
+# long table (cell x day) for dplyr/ggplot2
+library(dplyr); library(ggplot2)
+as_tibble(pred) |>
+  filter(date == min(date)) |>
+  ggplot(aes(x, y, fill = mean)) + geom_raster() + coord_equal()
 ```
 
 [`bruce_decompose()`](https://asgouveiaa.github.io/bruce/reference/bruce_decompose.md)
