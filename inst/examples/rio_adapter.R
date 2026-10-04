@@ -52,7 +52,8 @@ mrj  <- geobr::read_municipality(code_muni = 3304557, year = 2020) |> st_transfo
 area <- st_buffer(mrj, 40000)
 
 # ---- stations -------------------------------------------------------------
-meteo <- buscar_meteo_periodo_bulk(data_ini, data_fim)
+# query_meteorj_periodo.R v3: "min" adds min_temperatura (median/max unchanged)
+meteo <- buscar_meteo_periodo_bulk(data_ini, data_fim, estatisticas = unique(c("median", "max", VAR)))
 meteo <- meteo[!is.na(meteo$latitude) & !is.na(meteo$longitude) & !is.na(meteo[[col_est]]), ]
 meteo$source <- c(ofic = "official", aura = "aurassure", wunder = "wunder")[meteo$origem]
 meteo$source[meteo$estacao_id %in% AIRPORTS] <- "airport"

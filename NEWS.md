@@ -1,3 +1,11 @@
+# bruce 0.1.2
+
+* `bruce_mesh()` builds the domain boundary with INLA's non-convex hull
+  algorithm (as `INLA::inla.nonconvex.hull()`), so meshes match those of
+  `INLA::inla.mesh.2d()` from the same points. Before, older fmesher versions
+  produced a different (sf buffer) boundary, which changed the mesh and could
+  shift the estimated spatial range.
+
 # bruce 0.1.1
 
 * `bruce_covariates()` accepts a named list of rasters, each kept in its own

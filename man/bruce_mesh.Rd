@@ -16,7 +16,10 @@ the hull (metres).}
 
 \item{offset}{Length-2 vector: inner and outer extension (metres).}
 
-\item{convex}{Convexity parameter passed to \code{\link[fmesher:fm_nonconvex_hull]{fmesher::fm_nonconvex_hull()}}.}
+\item{convex}{Convexity parameter of the non-convex hull (metres if
+positive, fraction of the domain diameter if negative). The hull is built
+with the same algorithm as \code{INLA::inla.nonconvex.hull()}, so meshes match
+those built with \code{INLA::inla.mesh.2d()} from the same points.}
 }
 \value{
 An \code{fm_mesh_2d} object with attribute \code{bruce_nn} (the station
