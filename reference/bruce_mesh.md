@@ -30,8 +30,10 @@ bruce_mesh(d, max_edge = NULL, cutoff = NULL, offset = NULL, convex = -0.1)
 
 - convex:
 
-  Convexity parameter passed to
-  [`fmesher::fm_nonconvex_hull()`](https://inlabru-org.github.io/fmesher/reference/fm_nonconvex_hull.html).
+  Convexity parameter of the non-convex hull (metres if positive,
+  fraction of the domain diameter if negative). The hull is built with
+  the same algorithm as `INLA::inla.nonconvex.hull()`, so meshes match
+  those built with `INLA::inla.mesh.2d()` from the same points.
 
 ## Value
 

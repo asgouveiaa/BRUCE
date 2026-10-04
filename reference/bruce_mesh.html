@@ -9,7 +9,7 @@ cells) with a non-convex hull boundary."><meta property="og:image" content="http
 
     <a class="navbar-brand me-2" href="../index.html">bruce</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,7 +67,10 @@ the hull (metres).</p></dd>
 
 
 <dt id="arg-convex">convex<a class="anchor" aria-label="anchor" href="#arg-convex"></a></dt>
-<dd><p>Convexity parameter passed to <code><a href="https://inlabru-org.github.io/fmesher/reference/fm_nonconvex_hull.html" class="external-link">fmesher::fm_nonconvex_hull()</a></code>.</p></dd>
+<dd><p>Convexity parameter of the non-convex hull (metres if
+positive, fraction of the domain diameter if negative). The hull is built
+with the same algorithm as <code>INLA::inla.nonconvex.hull()</code>, so meshes match
+those built with <code>INLA::inla.mesh.2d()</code> from the same points.</p></dd>
 
 </dl></div>
     <div class="section level2">
