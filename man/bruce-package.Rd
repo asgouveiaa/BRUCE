@@ -26,6 +26,15 @@ with an optional gridded background, fitted with R-INLA.
 \code{\link[=bruce_simulate]{bruce_simulate()}} generates a synthetic city for testing.
 }
 
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://asgouveiaa.github.io/bruce/}
+  \item \url{https://github.com/asgouveiaa/bruce}
+  \item Report bugs at \url{https://github.com/asgouveiaa/bruce/issues}
+}
+
+}
 \author{
 \strong{Maintainer}: Ayrton Gouveia \email{ayrtonsgouveia19@gmail.com}
 

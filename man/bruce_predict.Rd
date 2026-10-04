@@ -41,10 +41,13 @@ for uncertainty of zonal means). Memory grows as cells x samples x days.}
 \item{cap}{Cap covariates to the range observed at stations and background
 cells (avoids extrapolating linear effects).}
 
-\item{resample}{How each covariate is brought to the grid when the grids
-differ: \code{"average"} (block mean) or \code{"near"} (value at the cell centre).
-A single value or a named vector, e.g. \code{c(svf = "near")} to keep a
-fine-scale covariate at its native values.}
+\item{resample}{How each covariate is brought to the grid: \code{"average"}
+(block mean of the native raster over each grid cell, via
+\code{\link[terra:project]{terra::project()}}), \code{"bilinear"}, or \code{"near"} (the native raster's value
+at the grid cell centre, read directly from that raster in its own
+projection). A single value or a named vector, e.g.
+\code{c(elev = "average", svf = "near")}. Rasters that already share the
+grid's geometry are used as they are.}
 
 \item{seed}{Seed for posterior sampling. A number makes samples
 reproducible (INLA then samples on one thread); \code{NULL} samples in

@@ -52,3 +52,30 @@ test_that("reserved covariate names are rejected", {
   names(r) <- c("intercept", "urb")
   expect_error(bruce_covariates(d, r), "cannot be")
 })
+
+test_that("a list of rasters is read in each raster's own projection", {
+  d <- bruce_data(sim$obs, sim$stations, sim$sources, crs = sim$crs, background = sim$background)
+  d1 <- bruce_covariates(d, sim$covariates, background_buffer = 4500)
+  # same urb layer, but stored in lon/lat: values at stations must match closely
+  urb_ll <- terra::project(sim$covariates$urb, "EPSG:4326", method = "near")
+  d2 <- bruce_covariates(d, list(elev = sim$covariates$elev, urb = urb_ll),
+                         background_buffer = 4500)
+  expect_equal(d2$covariates$names, c("elev", "urb"))
+  expect_true(is.list(d2$covariates$rasters))
+  expect_equal(d1$covariates$station$elev, d2$covariates$station$elev)
+  expect_gt(cor(d1$covariates$station$urb, d2$covariates$station$urb), 0.99)
+})
+
+test_that("na_value fills extraction gaps before standardisation", {
+  d <- bruce_data(sim$obs, sim$stations, sim$sources, crs = sim$crs, background = sim$background)
+  half <- terra::crop(sim$covariates$urb, terra::ext(650000, 665000, 7450000, 7480000))
+  st <- unique(d$obs[, c("station_id", "x")])
+  outside <- st$station_id[st$x > 665000]
+  dn <- bruce_covariates(d, list(urb = half), na_value = c(urb = 0), background_method = "point")
+  sc <- dn$covariates$scaling
+  z_out <- dn$covariates$station$urb[dn$covariates$station$station_id %in% outside]
+  expect_true(all(abs(z_out - (0 - sc$mean) / sc$sd) < 1e-10))
+  expect_equal(sc$na_value, 0)
+  expect_error(bruce_covariates(d, list(urb = half), na_value = c(svf = 0)), "Unknown covariate")
+  expect_error(bruce_covariates(d, list(half)), "named")
+})

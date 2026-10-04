@@ -9,14 +9,20 @@ bruce_covariates(
   rasters,
   background_method = "buffer_mean",
   background_buffer = 5500,
-  scale_on = NULL
+  scale_on = NULL,
+  na_value = NULL
 )
 }
 \arguments{
 \item{d}{A \code{bruce_data} object.}
 
-\item{rasters}{A \link[terra:SpatRaster-class]{terra::SpatRaster} whose layer names are the covariate
-names (syntactic R names), e.g. \code{elev}, \code{urb}, \code{svf}.}
+\item{rasters}{Either a \link[terra:SpatRaster-class]{terra::SpatRaster} whose layer names are the
+covariate names, or a \strong{named list} of single-layer SpatRasters. With a
+list, each covariate keeps its own projection and resolution and is
+extracted directly from its native raster, with no resampling to a
+common grid. This matters for fine-scale covariates such as sky view
+factor, where resampling can pick a neighbouring cell. Names must be
+syntactic R names, e.g. \code{elev}, \code{urb}, \code{svf}.}
 
 \item{background_method}{How each covariate is represented at background
 cells: \code{"buffer_mean"} (mean within \code{background_buffer} metres, matching
@@ -31,6 +37,13 @@ value or a named vector per covariate.}
 covariate: \code{"background"} or \code{"stations"}. Defaults to \code{"background"}
 when a background exists and the covariate is not \code{"zero"}, otherwise
 \code{"stations"}.}
+
+\item{na_value}{Raw value used where extraction returns \code{NA} (outside the
+raster or over missing cells), as a named vector per covariate, e.g.
+\code{c(urb = 0)} for an urban fraction raster that only covers the city.
+Applied before standardisation, at stations, background cells and the
+prediction grid. Covariates not listed get the covariate mean (0 on the
+standardised scale).}
 }
 \value{
 \code{d} with a \code{covariates} element.
@@ -40,9 +53,7 @@ Extracts covariates at station locations and at background cells,
 standardises them, and keeps the rasters for prediction.
 }
 \details{
-Covariate values that are missing after extraction are set to the
-covariate mean (0 on the standardised scale). The observed range at
-stations and background cells is stored and used by \code{\link[=bruce_predict]{bruce_predict()}} to
-cap covariates on the prediction grid, so the model never extrapolates a
-linear effect beyond the data.
+The observed range at stations and background cells is stored
+and used by \code{\link[=bruce_predict]{bruce_predict()}} to cap covariates on the prediction grid,
+so the model never extrapolates a linear effect beyond the data.
 }

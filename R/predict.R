@@ -18,10 +18,13 @@
 #'   for uncertainty of zonal means). Memory grows as cells x samples x days.
 #' @param cap Cap covariates to the range observed at stations and background
 #'   cells (avoids extrapolating linear effects).
-#' @param resample How each covariate is brought to the grid when the grids
-#'   differ: `"average"` (block mean) or `"near"` (value at the cell centre).
-#'   A single value or a named vector, e.g. `c(svf = "near")` to keep a
-#'   fine-scale covariate at its native values.
+#' @param resample How each covariate is brought to the grid: `"average"`
+#'   (block mean of the native raster over each grid cell, via
+#'   [terra::project()]), `"bilinear"`, or `"near"` (the native raster's value
+#'   at the grid cell centre, read directly from that raster in its own
+#'   projection). A single value or a named vector, e.g.
+#'   `c(elev = "average", svf = "near")`. Rasters that already share the
+#'   grid's geometry are used as they are.
 #' @param seed Seed for posterior sampling. A number makes samples
 #'   reproducible (INLA then samples on one thread); `NULL` samples in
 #'   parallel, faster but not reproducible.
@@ -84,7 +87,7 @@ bruce_predict <- function(fit, grid = NULL, domain = NULL, dates = NULL, n_sampl
 
 prepare_grid <- function(fit, grid, domain, cap, resample = "average") {
   cov_names <- fit$cov_names
-  rasters <- if (length(cov_names)) terra::unwrap(fit$data$covariates$rasters) else NULL
+  rasters <- if (length(cov_names)) unwrap_covariates(fit$data$covariates$rasters) else NULL
   if (is.null(grid)) {
     if (is.null(rasters)) stop("`grid` is required when the model has no covariates", call. = FALSE)
     grid <- rasters[[1]]
@@ -105,18 +108,33 @@ prepare_grid <- function(fit, grid, domain, cap, resample = "average") {
   if (length(cov_names)) {
     meth <- stats::setNames(rep("average", length(cov_names)), cov_names)
     if (is.null(names(resample))) meth[] <- resample[1] else meth[names(resample)] <- resample
+    if (!all(meth %in% c("average", "bilinear", "near"))) {
+      stop("`resample` must be 'average', 'bilinear' or 'near'", call. = FALSE)
+    }
     raw <- as.data.frame(lapply(stats::setNames(cov_names, cov_names), function(cn) {
       r1 <- rasters[[cn]]
-      if (!terra::compareGeom(r1, tmpl, stopOnError = FALSE)) r1 <- terra::resample(r1, tmpl, method = meth[[cn]])
-      terra::values(r1, mat = FALSE)[cells]
+      if (terra::same.crs(r1, tmpl) && terra::compareGeom(r1, tmpl, stopOnError = FALSE)) {
+        return(terra::values(r1, mat = FALSE)[cells])
+      }
+      if (meth[[cn]] == "near") {
+        return(extract_points(r1, data.frame(x = xy[, 1], y = xy[, 2]), fit$data$crs))
+      }
+      terra::values(terra::project(r1, tmpl, method = meth[[cn]]), mat = FALSE)[cells]
     }))
     n_na <- sum(!stats::complete.cases(raw))
-    if (n_na) message(sprintf("%d grid cell(s) with missing covariates use the covariate mean", n_na))
+    if (n_na) message(sprintf("%d grid cell(s) with missing covariates (filled with `na_value` or the covariate mean)", n_na))
     z <- scale_covariates(raw, fit$data$covariates$scaling, cap = cap)
     X <- cbind(X, as.matrix(z[, cov_names, drop = FALSE]))
   }
   A <- INLA::inla.spde.make.A(fit$mesh, loc = xy)
   list(template = tmpl, cells = cells, X = X, A = A)
+}
+
+# Stored covariate rasters -> named list of SpatRasters (also reads fits made
+# with 0.1.0, which stored one packed multi-layer raster).
+unwrap_covariates <- function(x) {
+  if (inherits(x, c("PackedSpatRaster", "SpatRaster"))) return(as_raster_list(terra::unwrap(x)))
+  lapply(x, terra::unwrap)
 }
 
 # Posterior means (S = 1) or joint samples (S = n_samples) of the latent
