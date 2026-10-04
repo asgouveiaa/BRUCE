@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bruce</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -116,6 +116,14 @@ and \(w\) but no offset or station effect.</p>
 <p>After fitting, the field is checked for collapse (see <code><a href="bruce_spec.html">bruce_spec()</a></code>);
 every attempt is recorded in <code>fit$attempts</code> and the outcome in
 <code>fit$status</code>.</p>
+<p>The mesh resolution is also checked against the estimated range: the
+typical edge of the triangles that contain the data is compared with the
+posterior mean range (<code>fit$mesh_resolution</code>). When the range is less than
+five times that edge, a warning is issued: the field is poorly resolved
+and the range estimate can change with the triangulation (in the Rio de
+Janeiro application, two meshes of about 1,000 vertices built with the
+same settings by different fmesher versions gave ranges of 7.7 and
+4.1 km).</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

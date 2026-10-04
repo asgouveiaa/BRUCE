@@ -146,5 +146,5 @@ as it finishes, so long runs can be resumed.
 The only requirement is the data contract: daily values per station,
 station coordinates with a network label, a table describing the
 networks, and covariate rasters. An optional gridded product on the same
-variable (e.g. ERA5-Land) can be added as background.
-`inst/examples/rio_adapter.R` shows the mapping used for Rio de Janeiro.
+variable (e.g. ERA5-Land) can be added as background. The `analises/rio`
+folder of the repository shows the mapping used for Rio de Janeiro.

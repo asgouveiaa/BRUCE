@@ -32,7 +32,7 @@
 
     <a class="navbar-brand me-2" href="index.html">bruce</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -68,7 +68,7 @@
 <h2 id="model">Model<a class="anchor" aria-label="anchor" href="#model"></a>
 </h2>
 <p>For an observation of network <em>k</em> at station <em>i</em>, location <em>s</em>, day <em>t</em>:</p>
-<p>η = β₀ + δₖ + x(s)ᵀβ + uᵢ + wₜ + ξ(s, t)</p>
+<p>η = β₀ + δₖ + x(s)ᵀβ + uᵢ + dₜ + w(s, t)</p>
 <ul>
 <li>
 <strong>δₖ</strong> — offset of a biased network (estimated only for networks declared <code>bias = TRUE</code>)</li>
@@ -77,9 +77,9 @@
 <li>
 <strong>uᵢ</strong> — iid station effect (persistent siting bias)</li>
 <li>
-<strong>wₜ</strong> — city-wide daily AR(1) term</li>
+<strong>dₜ</strong> — city-wide daily AR(1) term</li>
 <li>
-<strong>ξ(s, t)</strong> — Matérn SPDE field with AR(1) dependence between days</li>
+<strong>w(s, t)</strong> — Matérn SPDE field with AR(1) dependence between days</li>
 </ul>
 <p>Each network (and the background) has its own Gaussian likelihood with a fixed or PC-prior observation standard deviation. Windows (one month is the tested scale) are fitted independently with R-INLA.</p>
 </div>
@@ -162,7 +162,7 @@
 <h2 id="status">Status<a class="anchor" aria-label="anchor" href="#status"></a>
 </h2>
 <p>Version 0.1: daily temperature, independent windows. Planned: sub-daily resolution, humidity and heat index, bivariate fields.</p>
-<p><code>inst/examples/rio_adapter.R</code> maps the original Rio de Janeiro inputs onto the contract.</p>
+<p>The <code>analises/</code> folder of the repository has the Rio de Janeiro and Berlin applications, mapping their inputs onto the contract.</p>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">

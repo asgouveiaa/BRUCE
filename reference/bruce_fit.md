@@ -84,3 +84,12 @@ After fitting, the field is checked for collapse (see
 [`bruce_spec()`](https://asgouveiaa.github.io/bruce/reference/bruce_spec.md));
 every attempt is recorded in `fit$attempts` and the outcome in
 `fit$status`.
+
+The mesh resolution is also checked against the estimated range: the
+typical edge of the triangles that contain the data is compared with the
+posterior mean range (`fit$mesh_resolution`). When the range is less
+than five times that edge, a warning is issued: the field is poorly
+resolved and the range estimate can change with the triangulation (in
+the Rio de Janeiro application, two meshes of about 1,000 vertices built
+with the same settings by different fmesher versions gave ranges of 7.7
+and 4.1 km).
