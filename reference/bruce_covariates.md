@@ -11,7 +11,8 @@ bruce_covariates(
   rasters,
   background_method = "buffer_mean",
   background_buffer = 5500,
-  scale_on = NULL
+  scale_on = NULL,
+  na_value = NULL
 )
 ```
 
@@ -23,9 +24,14 @@ bruce_covariates(
 
 - rasters:
 
-  A
+  Either a
   [terra::SpatRaster](https://rspatial.github.io/terra/reference/SpatRaster-class.html)
-  whose layer names are the covariate names (syntactic R names), e.g.
+  whose layer names are the covariate names, or a **named list** of
+  single-layer SpatRasters. With a list, each covariate keeps its own
+  projection and resolution and is extracted directly from its native
+  raster, with no resampling to a common grid. This matters for
+  fine-scale covariates such as sky view factor, where resampling can
+  pick a neighbouring cell. Names must be syntactic R names, e.g.
   `elev`, `urb`, `svf`.
 
 - background_method:
@@ -48,15 +54,23 @@ bruce_covariates(
   background exists and the covariate is not `"zero"`, otherwise
   `"stations"`.
 
+- na_value:
+
+  Raw value used where extraction returns `NA` (outside the raster or
+  over missing cells), as a named vector per covariate, e.g.
+  `c(urb = 0)` for an urban fraction raster that only covers the city.
+  Applied before standardisation, at stations, background cells and the
+  prediction grid. Covariates not listed get the covariate mean (0 on
+  the standardised scale).
+
 ## Value
 
 `d` with a `covariates` element.
 
 ## Details
 
-Covariate values that are missing after extraction are set to the
-covariate mean (0 on the standardised scale). The observed range at
-stations and background cells is stored and used by
+The observed range at stations and background cells is stored and used
+by
 [`bruce_predict()`](https://asgouveiaa.github.io/bruce/reference/bruce_predict.md)
 to cap covariates on the prediction grid, so the model never
 extrapolates a linear effect beyond the data.

@@ -38,6 +38,16 @@ quality with an optional gridded background, fitted with R-INLA.
 [`bruce_simulate()`](https://asgouveiaa.github.io/bruce/reference/bruce_simulate.md)
 generates a synthetic city for testing.
 
+## See also
+
+Useful links:
+
+- <https://asgouveiaa.github.io/bruce/>
+
+- <https://github.com/asgouveiaa/bruce>
+
+- Report bugs at <https://github.com/asgouveiaa/bruce/issues>
+
 ## Author
 
 **Maintainer**: Ayrton Gouveia <ayrtonsgouveia19@gmail.com>

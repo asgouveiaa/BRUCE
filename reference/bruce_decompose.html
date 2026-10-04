@@ -11,7 +11,7 @@ how much of the spatial variance of the surface comes from each."><meta property
 
     <a class="navbar-brand me-2" href="../index.html">bruce</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -21,6 +21,7 @@ how much of the spatial variance of the surface comes from each."><meta property
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/bruce.html">Get started</a></li>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/asgouveiaa/bruce/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
@@ -82,10 +83,13 @@ cells (avoids extrapolating linear effects).</p></dd>
 
 
 <dt id="arg-resample">resample<a class="anchor" aria-label="anchor" href="#arg-resample"></a></dt>
-<dd><p>How each covariate is brought to the grid when the grids
-differ: <code>"average"</code> (block mean) or <code>"near"</code> (value at the cell centre).
-A single value or a named vector, e.g. <code>c(svf = "near")</code> to keep a
-fine-scale covariate at its native values.</p></dd>
+<dd><p>How each covariate is brought to the grid: <code>"average"</code>
+(block mean of the native raster over each grid cell, via
+<code><a href="https://rspatial.github.io/terra/reference/project.html" class="external-link">terra::project()</a></code>), <code>"bilinear"</code>, or <code>"near"</code> (the native raster's value
+at the grid cell centre, read directly from that raster in its own
+projection). A single value or a named vector, e.g.
+<code>c(elev = "average", svf = "near")</code>. Rasters that already share the
+grid's geometry are used as they are.</p></dd>
 
 </dl></div>
     <div class="section level2">

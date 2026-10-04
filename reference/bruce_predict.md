@@ -67,10 +67,14 @@ bruce_predict(
 
 - resample:
 
-  How each covariate is brought to the grid when the grids differ:
-  `"average"` (block mean) or `"near"` (value at the cell centre). A
-  single value or a named vector, e.g. `c(svf = "near")` to keep a
-  fine-scale covariate at its native values.
+  How each covariate is brought to the grid: `"average"` (block mean of
+  the native raster over each grid cell, via
+  [`terra::project()`](https://rspatial.github.io/terra/reference/project.html)),
+  `"bilinear"`, or `"near"` (the native raster's value at the grid cell
+  centre, read directly from that raster in its own projection). A
+  single value or a named vector, e.g.
+  `c(elev = "average", svf = "near")`. Rasters that already share the
+  grid's geometry are used as they are.
 
 - seed:
 
