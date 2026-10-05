@@ -11,6 +11,15 @@
 - [ ] Berlim (`analises/berlin/01_ajuste_mes.R`): primeiro teste fora do Rio.
 - [ ] Um segundo caso fora do Rio (Zurique ou Birmingham).
 
+## Custo
+- [ ] Rodar `analises/rio/07_custo.R` (depois do teste da malha) e decidir:
+      solver/threads padrão, CV com partida quente ou θ fixo, mapa diário
+      operacional com θ fixo.
+- [ ] Resolução da grade (500 m a 5 km): predizer direto na grade grossa ou
+      predizer a 500 m e agregar? Decidir com a parte C do 07.
+- [ ] Mudanças no modelo para baratear (depois do 07): malha não uniforme,
+      fixar sd de redes estáveis, janelas mais curtas.
+
 ## Testes automáticos
 - [ ] Teste de `bruce_cv(scheme = "lro")` (hoje só o LSO é testado).
 - [ ] Teste de recuperação dos parâmetros com mais dias e redes aglomeradas

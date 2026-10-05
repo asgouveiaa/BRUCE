@@ -36,6 +36,8 @@ source("query_meteorj_periodo.R")
 source(ERA5_FUNCOES)
 
 ANO <- 2025; MES <- 1; VAR <- "median"        # "median", "max" or "min"
+RESOLUCAO <- 500    # prediction grid (m); 500 as in the article. Coarser grids
+                    # (1000, 2000, 5000) are compared in 07_custo.R
 CRS_UTM  <- 31983
 AIRPORTS <- c("SBJR", "SBGL", "SBAF", "SBSC")
 DIR_OUT  <- RES
@@ -125,19 +127,16 @@ fit <- bruce_fit(d, mesh, spec, window = c(data_ini, data_fim), keep_config = TR
 message(sprintf("Fit: %.1f min", as.numeric(difftime(Sys.time(), t0, units = "mins"))))
 summary(fit)
 
-# Prediction on the 500 m grid of the article, without covariate capping
+# Prediction grid (500 m in the article), without covariate capping
 # (the article's predictions were not capped).
-grid500 <- rast(vect(mrj), resolution = 500, crs = paste0("EPSG:", CRS_UTM))
-values(grid500) <- 1
-grid500 <- mask(grid500, vect(mrj))
-pred <- bruce_predict(fit, grid = grid500, cap = FALSE,
-                      resample = c(elev = "average", urb = "near", svf = "near"))
-dec  <- bruce_decompose(fit, grid = grid500, cap = FALSE,
-                        resample = c(elev = "average", urb = "near", svf = "near"))
+grade <- bruce_grid(mrj, RESOLUCAO, crs = fit)
+rs <- c(elev = if (RESOLUCAO >= 250) "average" else "bilinear", urb = "near", svf = "near")
+pred <- bruce_predict(fit, grid = grade, cap = FALSE, resample = rs)
+dec  <- bruce_decompose(fit, grid = grade, cap = FALSE, resample = rs)
 
 saveRDS(list(fit = fit, pred_mean = wrap(pred$mean), variance = dec$variance),
         file.path(DIR_OUT, sprintf("bruce_%s.rds", tag)))
-writeRaster(pred$mean, file.path(DIR_OUT, sprintf("bruce_pred_%s.tif", tag)), overwrite = TRUE)
+writeRaster(pred$mean, file.path(DIR_OUT, sprintf("bruce_pred_%s_%dm.tif", tag, RESOLUCAO)), overwrite = TRUE)
 message("Saved to ", DIR_OUT, "/. Next: 02_comparar_com_artigo.R")
 
 # ---- optional: leave-region-out with CRPS (hours: 5 regions x ~25 min) -----

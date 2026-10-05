@@ -18,6 +18,8 @@ bruce_cv(
   noise_sd = 0,
   checkpoint_dir = NULL,
   theta_init = NULL,
+  fix_theta = FALSE,
+  fold_ids = NULL,
   seed = 1,
   verbose = TRUE
 )
@@ -50,7 +52,18 @@ observation).}
 \item{checkpoint_dir}{Optional directory; each finished fold is saved
 there and skipped on rerun, so long runs can be resumed.}
 
-\item{theta_init}{Passed to \code{\link[=bruce_fit]{bruce_fit()}}.}
+\item{theta_init}{Passed to \code{\link[=bruce_fit]{bruce_fit()}}. Starting each fold from the
+mode of the full-data fit (\code{full_fit$inla$mode$theta}) usually saves
+most of the mode search, since removing a few stations barely moves it.}
+
+\item{fix_theta}{Keep the hyperparameters fixed at \code{theta_init} in every
+fold (see \code{\link[=bruce_fit]{bruce_fit()}}): each fold becomes a single Gaussian
+approximation, much faster, at the cost of ignoring how hyperparameters
+would change without the held-out data. With \code{theta_init = NULL} the
+full data are fitted once first and their mode is used.}
+
+\item{fold_ids}{Run only these folds: station ids for \code{"lso"}, region ids
+for \code{"lro"}. Useful for quick checks on a subset.}
 
 \item{seed}{Seed for posterior sampling (\code{NULL} for parallel, non-reproducible
 sampling; see \code{\link[=bruce_predict]{bruce_predict()}}).}

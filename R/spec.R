@@ -29,7 +29,13 @@
 #'   uses the mean of reference observations.
 #' @param covariate_prec,bias_prec Prior precision of covariate and network
 #'   offset coefficients (mean 0).
-#' @param int_strategy INLA integration strategy.
+#' @param int_strategy INLA integration over the hyperparameters: `"ccd"`
+#'   (default, as in the Rio de Janeiro application), `"eb"` (empirical Bayes:
+#'   only the posterior mode, much faster; hyperparameter uncertainty is not
+#'   propagated) or `"grid"`.
+#' @param strategy INLA approximation of the latent marginals (`"gaussian"`,
+#'   `"simplified.laplace"`, `"laplace"`, `"adaptive"`); `NULL` keeps INLA's
+#'   default. `"gaussian"` is the cheapest.
 #' @param on_collapse What to do when the fit degenerates (field day-to-day
 #'   correlation near 1, or field standard deviation exploding):
 #'   `"retry_then_fix"` restarts from a reset mode and, if it collapses again,
@@ -53,7 +59,7 @@ bruce_spec <- function(range_prior = "nn", range_prior_prob = 0.5,
                        biased_prec_prior = c(3, 0.01),
                        intercept_prior = c(NA, 0.001),
                        covariate_prec = 1 / 4, bias_prec = 1 / 9,
-                       int_strategy = "ccd",
+                       int_strategy = "ccd", strategy = NULL,
                        on_collapse = c("retry_then_fix", "fix", "warn", "none"),
                        collapse_rho = 0.98, collapse_sd_ratio = 10,
                        fallback_group_rho = 0.55,

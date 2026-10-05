@@ -47,3 +47,16 @@ test_that("decomposition adds up to the prediction", {
   f <- tempfile(fileext = ".png"); grDevices::png(f, 1200, 400); plot(dec); grDevices::dev.off()
   expect_true(file.exists(f))
 })
+
+test_that("fixed hyperparameters reproduce the full fit and speed up CV", {
+  fit <- bruce_fit(d, mesh)
+  th <- fit$inla$mode$theta
+  fx <- bruce_fit(d, mesh, theta_init = th, fix_theta = TRUE)
+  expect_true(fx$fixed_theta)
+  expect_equal(fx$inla$summary.fixed$mean, fit$inla$summary.fixed$mean, tolerance = 0.05)
+  expect_error(bruce_fit(d, mesh, fix_theta = TRUE), "theta_init")
+  ids <- unique(d$obs$station_id[d$obs$source == "reference"])[1:2]
+  cv <- bruce_cv(d, mesh, n_samples = 20, theta_init = th, fix_theta = TRUE,
+                 fold_ids = ids, verbose = FALSE)
+  expect_equal(nrow(cv$folds), 2)
+})

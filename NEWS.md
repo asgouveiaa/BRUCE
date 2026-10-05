@@ -15,6 +15,14 @@ Primeira versão. Funções:
 * Saídas em tabela são tibbles (`bruce_cv()`, `bruce_zonal()`,
   `bruce_decompose()$variance`); `as_tibble()` converte predição e
   decomposição em tabela longa (célula × dia) para `dplyr`/`ggplot2`.
+* Opções para baratear o ajuste, todas desligadas por padrão:
+  `bruce_spec(int_strategy = "eb", strategy = "gaussian")`,
+  `bruce_fit(theta_init, fix_theta = TRUE)` (hiperparâmetros fixos) e, em
+  `bruce_cv()`, `fix_theta` e `fold_ids` (rodar só algumas dobras). O tempo
+  do ajuste fica em `fit$minutes`.
+* `bruce_grid()`: grade de predição na resolução escolhida.
+* Desvio e quantis das amostras com `matrixStats` quando instalado (mesmo
+  resultado, bem mais rápido em grades finas).
 * Validação: `bruce_cv()` (LSO e LRO, CRPS, cobertura, checkpoints) e
   `bruce_simulate()` (cidade sintética).
 

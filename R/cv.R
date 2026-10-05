@@ -21,7 +21,16 @@
 #'   observation).
 #' @param checkpoint_dir Optional directory; each finished fold is saved
 #'   there and skipped on rerun, so long runs can be resumed.
-#' @param theta_init Passed to [bruce_fit()].
+#' @param theta_init Passed to [bruce_fit()]. Starting each fold from the
+#'   mode of the full-data fit (`full_fit$inla$mode$theta`) usually saves
+#'   most of the mode search, since removing a few stations barely moves it.
+#' @param fix_theta Keep the hyperparameters fixed at `theta_init` in every
+#'   fold (see [bruce_fit()]): each fold becomes a single Gaussian
+#'   approximation, much faster, at the cost of ignoring how hyperparameters
+#'   would change without the held-out data. With `theta_init = NULL` the
+#'   full data are fitted once first and their mode is used.
+#' @param fold_ids Run only these folds: station ids for `"lso"`, region ids
+#'   for `"lro"`. Useful for quick checks on a subset.
 #' @param seed Seed for posterior sampling (`NULL` for parallel, non-reproducible
 #'   sampling; see [bruce_predict()]).
 #' @param verbose Print progress.
@@ -33,7 +42,8 @@
 bruce_cv <- function(d, mesh, spec = bruce_spec(), window = NULL,
                      scheme = c("lso", "lro"), regions = NULL, region_col = NULL,
                      test_sources = NULL, n_samples = 200, level = 0.9, noise_sd = 0,
-                     checkpoint_dir = NULL, theta_init = NULL, seed = 1, verbose = TRUE) {
+                     checkpoint_dir = NULL, theta_init = NULL, fix_theta = FALSE,
+                     fold_ids = NULL, seed = 1, verbose = TRUE) {
   stopifnot(inherits(d, "bruce_data"))
   check_inla()
   scheme <- match.arg(scheme)
@@ -57,7 +67,16 @@ bruce_cv <- function(d, mesh, spec = bruce_spec(), window = NULL,
       test = st$station_id[st$region %in% r & st$source %in% test_sources],
       drop = st$station_id[st$region %in% r]))
   }
+  if (!is.null(fold_ids)) {
+    miss <- setdiff(as.character(fold_ids), vapply(folds, function(f) as.character(f$id), ""))
+    if (length(miss)) warning("`fold_ids` not found among the folds: ", paste(miss, collapse = ", "), call. = FALSE)
+    folds <- Filter(function(f) as.character(f$id) %in% as.character(fold_ids), folds)
+  }
   if (!length(folds)) stop("No folds: no test stations in this window", call. = FALSE)
+  if (fix_theta && is.null(theta_init)) {
+    if (verbose) message("fix_theta: fitting the full data once to get the hyperparameter mode")
+    theta_init <- bruce_fit(d, mesh, spec, window = range(days))$inla$mode$theta
+  }
   if (!is.null(checkpoint_dir)) dir.create(checkpoint_dir, showWarnings = FALSE, recursive = TRUE)
 
   alpha <- (1 - level) / 2
@@ -70,7 +89,7 @@ bruce_cv <- function(d, mesh, spec = bruce_spec(), window = NULL,
     t0 <- proc.time()[["elapsed"]]
     fit <- tryCatch(
       bruce_fit(d, mesh, spec, window = range(days), theta_init = theta_init,
-                keep_config = n_samples > 0, drop_stations = fd$drop),
+                fix_theta = fix_theta, keep_config = n_samples > 0, drop_stations = fd$drop),
       error = function(e) e)
     if (inherits(fit, "error")) {
       if (verbose) message(sprintf("[%s] fold %s: fit failed (%s)", scheme, fd$id, conditionMessage(fit)))
@@ -95,9 +114,10 @@ bruce_cv <- function(d, mesh, spec = bruce_spec(), window = NULL,
       res <- data.frame(fold = fd$id, station_id = te$station_id[r], date = te$date[r],
                         obs = te$value[r], pred = rowMeans(P))
       if (ncol(P) > 1) {
-        res$pred_sd <- apply(P, 1, stats::sd)
-        res$lower <- apply(P, 1, stats::quantile, probs = alpha, names = FALSE)
-        res$upper <- apply(P, 1, stats::quantile, probs = 1 - alpha, names = FALSE)
+        res$pred_sd <- row_sd(P)
+        qq <- row_quantiles(P, c(alpha, 1 - alpha))
+        res$lower <- qq[, 1]
+        res$upper <- qq[, 2]
         res$crps <- vapply(seq_along(r), function(i) crps_ensemble(te$value[r[i]], P[i, ]), 0)
       }
       out[[k]] <- res

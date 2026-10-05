@@ -12,6 +12,7 @@ Wunderground em `~/.Renviron` (`WU_API_KEY=...`). Rode tudo de dentro desta past
 | `04_comparar_entradas_identicas.R` | ajusta o bruce com as entradas exatas do `.rds` do artigo | ~20 min |
 | `05_comparar_malha.R` | refaz a malha e compara com a do artigo | segundos |
 | `06_sensibilidade_malha.R` | mesmo modelo com 4–5 malhas, da mais grossa à mais fina | horas |
+| `07_custo.R` | custo: formas de rodar o INLA (threads, PARDISO, `eb`, θ fixo), CV barata e resolução da grade (1000 a 100 m) | ~8 h |
 
 ## Registro da validação (mediana, janeiro de 2025)
 

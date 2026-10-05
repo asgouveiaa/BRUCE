@@ -33,6 +33,7 @@ reference:
   - bruce_check
 - title: "Use the fit"
   contents:
+  - bruce_grid
   - bruce_predict
   - bruce_decompose
   - plot.bruce_decomposition

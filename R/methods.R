@@ -20,6 +20,7 @@ bruce_check <- function(fit) {
                 mr$edge, mr$ratio,
                 if (mr$ok) "ok" else sprintf("below %g: range estimate may depend on the mesh", mr$min_ratio)))
   }
+  if (!is.null(fit$minutes)) cat(sprintf("Fitting time: %.1f min\n", fit$minutes))
   print(fit$attempts, row.names = FALSE)
   invisible(fit$attempts)
 }
@@ -53,8 +54,13 @@ print.bruce_fit <- function(x, ...) {
 #' @export
 summary.bruce_fit <- function(object, ...) {
   print(object)
-  cat("\nHyperparameters:\n")
-  print(round(object$inla$summary.hyperpar[, c("mean", "sd", "0.025quant", "0.975quant")], 3))
+  hp <- object$inla$summary.hyperpar
+  if (isTRUE(object$fixed_theta) || is.null(hp) || !nrow(hp)) {
+    cat("\nHyperparameters fixed at `theta_init` (not estimated in this fit)\n")
+  } else {
+    cat("\nHyperparameters:\n")
+    print(round(hp[, c("mean", "sd", "0.025quant", "0.975quant")], 3))
+  }
   cat("\n")
   bruce_check(object)
   invisible(object)

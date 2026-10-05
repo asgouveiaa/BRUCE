@@ -76,3 +76,19 @@ window_days <- function(d, window) {
 }
 
 `%||%` <- function(a, b) if (is.null(a)) b else a
+
+# Row-wise sd and quantiles of a samples matrix (rows = locations,
+# columns = samples). matrixStats is much faster on large grids; results are
+# the same (type 7 quantiles).
+row_sd <- function(P) {
+  if (requireNamespace("matrixStats", quietly = TRUE)) return(matrixStats::rowSds(P))
+  apply(P, 1, stats::sd)
+}
+
+row_quantiles <- function(P, probs) {
+  if (requireNamespace("matrixStats", quietly = TRUE)) {
+    return(unname(matrixStats::rowQuantiles(P, probs = probs, type = 7L, drop = FALSE)))
+  }
+  q <- apply(P, 1, stats::quantile, probs = probs, names = FALSE)
+  if (length(probs) == 1) matrix(q, ncol = 1) else t(q)
+}

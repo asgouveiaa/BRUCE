@@ -21,6 +21,7 @@ bruce_spec(
   covariate_prec = 1/4,
   bias_prec = 1/9,
   int_strategy = "ccd",
+  strategy = NULL,
   on_collapse = c("retry_then_fix", "fix", "warn", "none"),
   collapse_rho = 0.98,
   collapse_sd_ratio = 10,
@@ -67,7 +68,14 @@ uses the mean of reference observations.}
 \item{covariate_prec, bias_prec}{Prior precision of covariate and network
 offset coefficients (mean 0).}
 
-\item{int_strategy}{INLA integration strategy.}
+\item{int_strategy}{INLA integration over the hyperparameters: \code{"ccd"}
+(default, as in the Rio de Janeiro application), \code{"eb"} (empirical Bayes:
+only the posterior mode, much faster; hyperparameter uncertainty is not
+propagated) or \code{"grid"}.}
+
+\item{strategy}{INLA approximation of the latent marginals (\code{"gaussian"},
+\code{"simplified.laplace"}, \code{"laplace"}, \code{"adaptive"}); \code{NULL} keeps INLA's
+default. \code{"gaussian"} is the cheapest.}
 
 \item{on_collapse}{What to do when the fit degenerates (field day-to-day
 correlation near 1, or field standard deviation exploding):

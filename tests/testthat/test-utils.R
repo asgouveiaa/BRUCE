@@ -34,3 +34,33 @@ test_that("mesh resolution compares range with edge length", {
   expect_false(r$ok)
   expect_true(bruce:::mesh_resolution(m, cbind(500, 200), range = 8000)$ok)
 })
+
+test_that("row_sd and row_quantiles match base R", {
+  set.seed(1)
+  P <- matrix(rnorm(300), 30)
+  expect_equal(bruce:::row_sd(P), apply(P, 1, sd))
+  q <- bruce:::row_quantiles(P, c(0.05, 0.5, 0.95))
+  expect_equal(dim(q), c(30, 3))
+  expect_equal(q, t(apply(P, 1, quantile, probs = c(0.05, 0.5, 0.95), names = FALSE)))
+  expect_equal(bruce:::row_quantiles(P, 0.1)[, 1], apply(P, 1, quantile, probs = 0.1, names = FALSE))
+})
+
+test_that("bruce_grid builds a masked grid at the requested resolution", {
+  sim <- bruce_simulate(n_days = 2, seed = 1)
+  g1 <- bruce_grid(sim$domain, 1000)
+  g2 <- bruce_grid(sim$domain, 500)
+  expect_s4_class(g1, "SpatRaster")
+  expect_equal(terra::res(g1), c(1000, 1000))
+  n1 <- sum(!is.na(terra::values(g1))); n2 <- sum(!is.na(terra::values(g2)))
+  expect_gt(n1, 0)
+  expect_equal(n2 / n1, 4, tolerance = 0.1)
+  ll <- sf::st_transform(sf::st_as_sf(sim$domain), 4326)
+  expect_error(bruce_grid(ll, 1000), "longitude")
+  expect_equal(terra::res(bruce_grid(ll, 1000, crs = sim$crs)), c(1000, 1000))
+})
+
+test_that("spec accepts the cheaper INLA strategies", {
+  s <- bruce_spec(int_strategy = "eb", strategy = "gaussian")
+  expect_equal(s$strategy, "gaussian")
+  expect_null(bruce_spec()$strategy)
+})

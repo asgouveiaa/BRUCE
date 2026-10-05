@@ -61,10 +61,9 @@ bruce_predict <- function(fit, grid = NULL, domain = NULL, dates = NULL, n_sampl
     P <- eval_predictor(fit, comps, gp$X, gp$A, g_idx[k])
     m_mean[gp$cells, k] <- rowMeans(P)
     if (S > 1) {
-      m_sd[gp$cells, k] <- apply(P, 1, stats::sd)
-      qs <- matrix(apply(P, 1, stats::quantile, probs = probs, names = FALSE),
-                   nrow = length(probs))
-      for (j in seq_along(probs)) m_q[[j]][gp$cells, k] <- qs[j, ]
+      m_sd[gp$cells, k] <- row_sd(P)
+      qs <- row_quantiles(P, probs)
+      for (j in seq_along(probs)) m_q[[j]][gp$cells, k] <- qs[, j]
       if (!is.null(samples)) samples[[k]] <- P
     }
   }

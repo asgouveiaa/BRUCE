@@ -9,6 +9,13 @@
 #' @param theta_init Optional starting mode for the hyperparameters (on
 #'   INLA's internal scale, e.g. `other_fit$inla$mode$theta` from a stable
 #'   fit with the same structure).
+#' @param fix_theta Keep the hyperparameters fixed at `theta_init` instead
+#'   of estimating them: INLA then computes a single Gaussian approximation
+#'   of the latent field, which is much faster. Meant for operational maps
+#'   with hyperparameters learned from a previous fit, and for fast
+#'   cross-validation. Hyperparameter uncertainty is not propagated, and
+#'   `theta_init` must come from a model with the same structure (same
+#'   networks with estimated noise, same optional terms).
 #' @param keep_config Keep the latent configuration so that posterior samples
 #'   can be drawn (needed by `bruce_predict(n_samples > 0)`).
 #' @param cpo Compute CPO/PIT.
@@ -42,15 +49,18 @@
 #' @return An object of class `bruce_fit`.
 #' @export
 bruce_fit <- function(d, mesh, spec = bruce_spec(), window = NULL, theta_init = NULL,
-                      keep_config = FALSE, cpo = FALSE, drop_stations = NULL,
-                      verbose = FALSE) {
+                      fix_theta = FALSE, keep_config = FALSE, cpo = FALSE,
+                      drop_stations = NULL, verbose = FALSE) {
   stopifnot(inherits(d, "bruce_data"), inherits(spec, "bruce_spec"))
   check_inla()
+  if (fix_theta && is.null(theta_init)) stop("`fix_theta = TRUE` needs `theta_init`", call. = FALSE)
+  t0 <- proc.time()[["elapsed"]]
   b <- build_model(d, mesh, spec, window, drop_stations)
   y_sd <- stats::sd(b$obs$value)
 
   run <- function(theta = NULL) {
-    run_inla(b, spec, theta = theta, keep_config = keep_config, cpo = cpo, verbose = verbose)
+    run_inla(b, spec, theta = theta, fixed = fix_theta, keep_config = keep_config, cpo = cpo,
+             verbose = verbose)
   }
   record <- function(fit, label) {
     chk <- check_collapse(fit, spec, y_sd)
@@ -64,10 +74,13 @@ bruce_fit <- function(d, mesh, spec = bruce_spec(), window = NULL, theta_init = 
   if (!is.null(fixed_rho)) set_group_rho(b, fixed_rho, spec)
 
   fit <- run(theta_init)
-  attempts[[1]] <- record(fit, if (is.null(theta_init)) "default" else "user theta_init")
+  attempts[[1]] <- record(fit, if (fix_theta) "hyperparameters fixed at theta_init"
+                               else if (is.null(theta_init)) "default" else "user theta_init")
   status <- if (attempts[[1]]$collapsed) "collapsed" else "ok"
 
-  if (status == "collapsed" && is.null(fixed_rho) && spec$on_collapse != "none") {
+  if (status == "collapsed" && fix_theta) {
+    warning("Spatial field collapsed at the fixed `theta_init`; results are unreliable", call. = FALSE)
+  } else if (status == "collapsed" && is.null(fixed_rho) && spec$on_collapse != "none") {
     if (spec$on_collapse == "warn") {
       warning("Spatial field collapsed (see fit$attempts); results are unreliable", call. = FALSE)
     }
@@ -114,7 +127,8 @@ bruce_fit <- function(d, mesh, spec = bruce_spec(), window = NULL, theta_init = 
          days = b$days, station_ids = b$station_ids, cov_names = b$cov_names,
          bias_cols = b$bias_cols, blocks = b$blocks, range_prior = b$range_prior,
          group_rho_fixed = fixed_rho, drop_stations = drop_stations,
-         attempts = do.call(rbind, attempts), status = status,
+         attempts = do.call(rbind, attempts), status = status, fixed_theta = fix_theta,
+         minutes = (proc.time()[["elapsed"]] - t0) / 60,
          inla_version = as.character(utils::packageVersion("INLA"))),
     class = "bruce_fit"
   )
@@ -237,7 +251,8 @@ build_model <- function(d, mesh, spec, window, drop_stations = NULL) {
        range_prior = r0, obs = obs)
 }
 
-run_inla <- function(b, spec, theta = NULL, keep_config = FALSE, cpo = FALSE, verbose = FALSE) {
+run_inla <- function(b, spec, theta = NULL, fixed = FALSE, keep_config = FALSE, cpo = FALSE,
+                     verbose = FALSE) {
   e <- b$env
   data <- INLA::inla.stack.data(b$stack, spde_obj = e$spde_obj, hyp_station = e$hyp_station,
                                 hyp_day = e$hyp_day, ctrl_group = e$ctrl_group,
@@ -247,10 +262,14 @@ run_inla <- function(b, spec, theta = NULL, keep_config = FALSE, cpo = FALSE, ve
     control.predictor = list(A = INLA::inla.stack.A(b$stack), compute = FALSE),
     control.family = b$control_family, control.fixed = b$control_fixed,
     control.compute = list(config = keep_config, cpo = cpo),
-    control.inla = list(int.strategy = spec$int_strategy),
+    control.inla = c(list(int.strategy = spec$int_strategy),
+                     if (!is.null(spec$strategy)) list(strategy = spec$strategy)),
     verbose = verbose
   )
-  if (!is.null(theta)) args$control.mode <- list(theta = theta, restart = TRUE)
+  if (!is.null(theta)) {
+    args$control.mode <- if (fixed) list(theta = theta, fixed = TRUE)
+                         else list(theta = theta, restart = TRUE)
+  }
   if (!is.null(spec$num_threads)) args$num.threads <- spec$num_threads
   do.call(INLA::inla, args)
 }
