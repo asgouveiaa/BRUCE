@@ -62,6 +62,7 @@ where noted.</p>
 <span>  covariate_prec <span class="op">=</span> <span class="fl">1</span><span class="op">/</span><span class="fl">4</span>,</span>
 <span>  bias_prec <span class="op">=</span> <span class="fl">1</span><span class="op">/</span><span class="fl">9</span>,</span>
 <span>  int_strategy <span class="op">=</span> <span class="st">"ccd"</span>,</span>
+<span>  strategy <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  on_collapse <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"retry_then_fix"</span>, <span class="st">"fix"</span>, <span class="st">"warn"</span>, <span class="st">"none"</span><span class="op">)</span>,</span>
 <span>  collapse_rho <span class="op">=</span> <span class="fl">0.98</span>,</span>
 <span>  collapse_sd_ratio <span class="op">=</span> <span class="fl">10</span>,</span>
@@ -139,7 +140,16 @@ offset coefficients (mean 0).</p></dd>
 
 
 <dt id="arg-int-strategy">int_strategy<a class="anchor" aria-label="anchor" href="#arg-int-strategy"></a></dt>
-<dd><p>INLA integration strategy.</p></dd>
+<dd><p>INLA integration over the hyperparameters: <code>"ccd"</code>
+(default, as in the Rio de Janeiro application), <code>"eb"</code> (empirical Bayes:
+only the posterior mode, much faster; hyperparameter uncertainty is not
+propagated) or <code>"grid"</code>.</p></dd>
+
+
+<dt id="arg-strategy">strategy<a class="anchor" aria-label="anchor" href="#arg-strategy"></a></dt>
+<dd><p>INLA approximation of the latent marginals (<code>"gaussian"</code>,
+<code>"simplified.laplace"</code>, <code>"laplace"</code>, <code>"adaptive"</code>); <code>NULL</code> keeps INLA's
+default. <code>"gaussian"</code> is the cheapest.</p></dd>
 
 
 <dt id="arg-on-collapse">on_collapse<a class="anchor" aria-label="anchor" href="#arg-on-collapse"></a></dt>

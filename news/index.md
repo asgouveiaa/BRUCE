@@ -32,6 +32,17 @@ Primeira versão. Funções:
   [`as_tibble()`](https://tibble.tidyverse.org/reference/as_tibble.html)
   converte predição e decomposição em tabela longa (célula × dia) para
   `dplyr`/`ggplot2`.
+- Opções para baratear o ajuste, todas desligadas por padrão:
+  `bruce_spec(int_strategy = "eb", strategy = "gaussian")`,
+  `bruce_fit(theta_init, fix_theta = TRUE)` (hiperparâmetros fixos) e,
+  em
+  [`bruce_cv()`](https://asgouveiaa.github.io/bruce/reference/bruce_cv.md),
+  `fix_theta` e `fold_ids` (rodar só algumas dobras). O tempo do ajuste
+  fica em `fit$minutes`.
+- [`bruce_grid()`](https://asgouveiaa.github.io/bruce/reference/bruce_grid.md):
+  grade de predição na resolução escolhida.
+- Desvio e quantis das amostras com `matrixStats` quando instalado
+  (mesmo resultado, bem mais rápido em grades finas).
 - Validação:
   [`bruce_cv()`](https://asgouveiaa.github.io/bruce/reference/bruce_cv.md)
   (LSO e LRO, CRPS, cobertura, checkpoints) e

@@ -11,6 +11,7 @@ bruce_fit(
   spec = bruce_spec(),
   window = NULL,
   theta_init = NULL,
+  fix_theta = FALSE,
   keep_config = FALSE,
   cpo = FALSE,
   drop_stations = NULL,
@@ -45,6 +46,16 @@ bruce_fit(
   Optional starting mode for the hyperparameters (on INLA's internal
   scale, e.g. `other_fit$inla$mode$theta` from a stable fit with the
   same structure).
+
+- fix_theta:
+
+  Keep the hyperparameters fixed at `theta_init` instead of estimating
+  them: INLA then computes a single Gaussian approximation of the latent
+  field, which is much faster. Meant for operational maps with
+  hyperparameters learned from a previous fit, and for fast
+  cross-validation. Hyperparameter uncertainty is not propagated, and
+  `theta_init` must come from a model with the same structure (same
+  networks with estimated noise, same optional terms).
 
 - keep_config:
 

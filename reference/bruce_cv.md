@@ -20,6 +20,8 @@ bruce_cv(
   noise_sd = 0,
   checkpoint_dir = NULL,
   theta_init = NULL,
+  fix_theta = FALSE,
+  fold_ids = NULL,
   seed = 1,
   verbose = TRUE
 )
@@ -77,6 +79,23 @@ bruce_cv(
 
   Passed to
   [`bruce_fit()`](https://asgouveiaa.github.io/bruce/reference/bruce_fit.md).
+  Starting each fold from the mode of the full-data fit
+  (`full_fit$inla$mode$theta`) usually saves most of the mode search,
+  since removing a few stations barely moves it.
+
+- fix_theta:
+
+  Keep the hyperparameters fixed at `theta_init` in every fold (see
+  [`bruce_fit()`](https://asgouveiaa.github.io/bruce/reference/bruce_fit.md)):
+  each fold becomes a single Gaussian approximation, much faster, at the
+  cost of ignoring how hyperparameters would change without the held-out
+  data. With `theta_init = NULL` the full data are fitted once first and
+  their mode is used.
+
+- fold_ids:
+
+  Run only these folds: station ids for `"lso"`, region ids for `"lro"`.
+  Useful for quick checks on a subset.
 
 - seed:
 

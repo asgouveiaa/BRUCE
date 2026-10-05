@@ -56,6 +56,8 @@ held-out reference stations.</p>
 <span>  noise_sd <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  checkpoint_dir <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  theta_init <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  fix_theta <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  fold_ids <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  seed <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -111,7 +113,22 @@ there and skipped on rerun, so long runs can be resumed.</p></dd>
 
 
 <dt id="arg-theta-init">theta_init<a class="anchor" aria-label="anchor" href="#arg-theta-init"></a></dt>
-<dd><p>Passed to <code><a href="bruce_fit.html">bruce_fit()</a></code>.</p></dd>
+<dd><p>Passed to <code><a href="bruce_fit.html">bruce_fit()</a></code>. Starting each fold from the
+mode of the full-data fit (<code>full_fit$inla$mode$theta</code>) usually saves
+most of the mode search, since removing a few stations barely moves it.</p></dd>
+
+
+<dt id="arg-fix-theta">fix_theta<a class="anchor" aria-label="anchor" href="#arg-fix-theta"></a></dt>
+<dd><p>Keep the hyperparameters fixed at <code>theta_init</code> in every
+fold (see <code><a href="bruce_fit.html">bruce_fit()</a></code>): each fold becomes a single Gaussian
+approximation, much faster, at the cost of ignoring how hyperparameters
+would change without the held-out data. With <code>theta_init = NULL</code> the
+full data are fitted once first and their mode is used.</p></dd>
+
+
+<dt id="arg-fold-ids">fold_ids<a class="anchor" aria-label="anchor" href="#arg-fold-ids"></a></dt>
+<dd><p>Run only these folds: station ids for <code>"lso"</code>, region ids
+for <code>"lro"</code>. Useful for quick checks on a subset.</p></dd>
 
 
 <dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>

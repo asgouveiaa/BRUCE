@@ -112,6 +112,8 @@ and covariates.
 
 ## Use the fit
 
+- [`bruce_grid()`](https://asgouveiaa.github.io/bruce/reference/bruce_grid.md)
+  : Prediction grid at a chosen resolution
 - [`bruce_predict()`](https://asgouveiaa.github.io/bruce/reference/bruce_predict.md)
   : Predict on a raster grid
 - [`bruce_decompose()`](https://asgouveiaa.github.io/bruce/reference/bruce_decompose.md)

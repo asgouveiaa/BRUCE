@@ -24,6 +24,7 @@ bruce_spec(
   covariate_prec = 1/4,
   bias_prec = 1/9,
   int_strategy = "ccd",
+  strategy = NULL,
   on_collapse = c("retry_then_fix", "fix", "warn", "none"),
   collapse_rho = 0.98,
   collapse_sd_ratio = 10,
@@ -97,7 +98,16 @@ bruce_spec(
 
 - int_strategy:
 
-  INLA integration strategy.
+  INLA integration over the hyperparameters: `"ccd"` (default, as in the
+  Rio de Janeiro application), `"eb"` (empirical Bayes: only the
+  posterior mode, much faster; hyperparameter uncertainty is not
+  propagated) or `"grid"`.
+
+- strategy:
+
+  INLA approximation of the latent marginals (`"gaussian"`,
+  `"simplified.laplace"`, `"laplace"`, `"adaptive"`); `NULL` keeps
+  INLA's default. `"gaussian"` is the cheapest.
 
 - on_collapse:
 
