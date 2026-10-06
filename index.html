@@ -68,7 +68,7 @@
 <h2 id="model">Model<a class="anchor" aria-label="anchor" href="#model"></a>
 </h2>
 <p>For an observation of network <em>k</em> at station <em>i</em>, location <em>s</em>, day <em>t</em>:</p>
-<p>η = β₀ + δₖ + x(s)ᵀβ + uᵢ + dₜ + w(s, t)</p>
+<p>η = β₀ + δₖ + x(s)ᵀβ + uᵢ + wₜ + ξ(s, t)</p>
 <ul>
 <li>
 <strong>δₖ</strong> — offset of a biased network (estimated only for networks declared <code>bias = TRUE</code>)</li>
@@ -77,9 +77,9 @@
 <li>
 <strong>uᵢ</strong> — iid station effect (persistent siting bias)</li>
 <li>
-<strong>dₜ</strong> — city-wide daily AR(1) term</li>
+<strong>wₜ</strong> — city-wide daily AR(1) term</li>
 <li>
-<strong>w(s, t)</strong> — Matérn SPDE field with AR(1) dependence between days</li>
+<strong>ξ(s, t)</strong> — Matérn SPDE field with AR(1) dependence between days</li>
 </ul>
 <p>Each network (and the background) has its own Gaussian likelihood with a fixed or PC-prior observation standard deviation. Windows (one month is the tested scale) are fitted independently with R-INLA.</p>
 </div>
