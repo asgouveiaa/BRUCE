@@ -138,9 +138,18 @@ variance each carries, including their covariance.
 
 ``` r
 
-cv <- bruce_cv(d, mesh, spec, scheme = "lso", checkpoint_dir = "cv_lso")
+cv <- bruce_cv(fit, checkpoint_dir = "cv_lso")
 cv
 ```
+
+Given the fit,
+[`bruce_cv()`](https://asgouveiaa.github.io/bruce/reference/bruce_cv.md)
+reuses its data, mesh and specification, and starts every fold from its
+hyperparameters, which gives the same answer as starting from scratch,
+only faster. By default it scores the reading of a new station at the
+held-out location (field, network offset, a new station effect and
+measurement noise), so coverage close to the nominal level means
+calibrated intervals; the field-only coverage is reported alongside.
 
 Leave-station-out (`"lso"`) removes one reference station per fold;
 leave-region-out (`"lro"`) removes every station in a region, a harder

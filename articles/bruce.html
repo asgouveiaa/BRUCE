@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bruce</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0.10</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -183,8 +183,15 @@ including their covariance.</p>
 <h2 id="validate">5. Validate<a class="anchor" aria-label="anchor" href="#validate"></a>
 </h2>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">cv</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/bruce_cv.html">bruce_cv</a></span><span class="op">(</span><span class="va">d</span>, <span class="va">mesh</span>, <span class="va">spec</span>, scheme <span class="op">=</span> <span class="st">"lso"</span>, checkpoint_dir <span class="op">=</span> <span class="st">"cv_lso"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">cv</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/bruce_cv.html">bruce_cv</a></span><span class="op">(</span><span class="va">fit</span>, checkpoint_dir <span class="op">=</span> <span class="st">"cv_lso"</span><span class="op">)</span></span>
 <span><span class="va">cv</span></span></code></pre></div>
+<p>Given the fit, <code><a href="../reference/bruce_cv.html">bruce_cv()</a></code> reuses its data, mesh and
+specification, and starts every fold from its hyperparameters, which
+gives the same answer as starting from scratch, only faster. By default
+it scores the reading of a new station at the held-out location (field,
+network offset, a new station effect and measurement noise), so coverage
+close to the nominal level means calibrated intervals; the field-only
+coverage is reported alongside.</p>
 <p>Leave-station-out (<code>"lso"</code>) removes one reference station
 per fold; leave-region-out (<code>"lro"</code>) removes every station in
 a region, a harder test of how the map behaves where there is no data.

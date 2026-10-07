@@ -8,8 +8,8 @@ held-out reference stations.
 ``` r
 bruce_cv(
   d,
-  mesh,
-  spec = bruce_spec(),
+  mesh = NULL,
+  spec = NULL,
   window = NULL,
   scheme = c("lso", "lro"),
   regions = NULL,
@@ -17,6 +17,7 @@ bruce_cv(
   test_sources = NULL,
   n_samples = 200,
   level = 0.9,
+  scale = c("observation", "field"),
   noise_sd = 0,
   checkpoint_dir = NULL,
   theta_init = NULL,
@@ -29,10 +30,22 @@ bruce_cv(
 
 ## Arguments
 
-- d, mesh, spec, window:
+- d:
+
+  A `bruce_fit` (recommended) or a `bruce_data`. Given a fit, its data,
+  mesh, specification and window are reused (each can still be
+  overridden), and every fold starts the hyperparameter search from the
+  fit's mode (`theta_init = fit`): the result is the same as starting
+  from scratch, only faster. If the fit ended with the day-to-day
+  correlation fixed after a collapse, the folds keep it fixed at the
+  same value.
+
+- mesh, spec, window:
 
   As in
   [`bruce_fit()`](https://asgouveiaa.github.io/bruce/reference/bruce_fit.md).
+  `mesh` is required when `d` is a `bruce_data`; `spec` defaults to
+  [`bruce_spec()`](https://asgouveiaa.github.io/bruce/reference/bruce_spec.md).
 
 - scheme:
 
@@ -63,12 +76,31 @@ bruce_cv(
 
   Nominal level of the predictive interval for coverage.
 
+- scale:
+
+  What the predictive distribution describes, and therefore what RMSE,
+  CRPS and coverage evaluate:
+
+  - `"observation"` (default): the reading of a new station of the test
+    network at the held-out location: the spatial surface plus the
+    network's offset, a new station effect (drawn with the estimated
+    station sd) and the network's measurement noise. This is the
+    distribution the held-out readings come from, so coverage near
+    `level` means calibrated intervals.
+
+  - `"field"`: the reference-scale surface only, as mapped by
+    [`bruce_predict()`](https://asgouveiaa.github.io/bruce/reference/bruce_predict.md)
+    and as scored in the original Rio de Janeiro application. Readings
+    vary around it by station effect and noise, so its intervals are
+    expected to cover held-out readings less often than `level`. With
+    `"observation"`, field-scale coverage and CRPS are also reported
+    (`coverage_field`, `crps_field`).
+
 - noise_sd:
 
-  Observation noise added to samples before scoring (`0` scores the
-  latent field, as in the original application; use the reference
-  network's `obs_sd` to score the predictive distribution of an
-  observation).
+  With `scale = "field"` only: extra Gaussian noise added to the samples
+  before scoring (kept for compatibility; `scale = "observation"`
+  accounts for noise and station effects properly).
 
 - checkpoint_dir:
 
@@ -78,10 +110,10 @@ bruce_cv(
 - theta_init:
 
   Passed to
-  [`bruce_fit()`](https://asgouveiaa.github.io/bruce/reference/bruce_fit.md).
-  Starting each fold from the mode of the full-data fit
-  (`full_fit$inla$mode$theta`) usually saves most of the mode search,
-  since removing a few stations barely moves it.
+  [`bruce_fit()`](https://asgouveiaa.github.io/bruce/reference/bruce_fit.md)
+  (a `bruce_fit` or a vector). Starting each fold from the mode of the
+  full-data fit usually saves most of the mode search, since removing a
+  few stations barely moves it; this is the default when `d` is a fit.
 
 - fix_theta:
 
@@ -111,4 +143,15 @@ bruce_cv(
 
 An object of class `bruce_cv` with per-observation `predictions`,
 per-fold `folds` (scores and fit status) and `overall` scores, all as
-tibbles.
+tibbles, plus the `scale` that was scored.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+fit <- bruce_fit(d, mesh, spec, keep_config = TRUE)
+cv  <- bruce_cv(fit)                          # leave-station-out, warm start
+cv  <- bruce_cv(fit, fold_ids = c("A621", "SBRJ"), n_samples = 100)
+cv  <- bruce_cv(fit, scale = "field")         # as in the original application
+} # }
+```

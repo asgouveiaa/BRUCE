@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">bruce</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0.10</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -45,8 +45,15 @@
 </ul></div>
 <div class="section level2">
 <h2 id="custo">Custo<a class="anchor" aria-label="anchor" href="#custo"></a></h2>
-<ul class="task-list"><li><label><input type="checkbox">Rodar <code>analises/rio/07_custo.R</code> (depois do teste da malha) e decidir: solver/threads padrão, CV com partida quente ou θ fixo, mapa diário operacional com θ fixo.</label></li>
+<ul class="task-list"><li><label><input type="checkbox" checked>Rodar <code>analises/rio/07_custo.R</code> (depois do teste da malha) e decidir: solver/threads padrão, CV com partida quente ou θ fixo, mapa diário operacional com θ fixo.</label></li>
 <li><label><input type="checkbox">Resolução da grade (500 m a 5 km): predizer direto na grade grossa ou predizer a 500 m e agregar? Decidir com a parte C do 07.</label></li>
+<li><label><input type="checkbox">Medir o pico de RAM (<code>/usr/bin/time -v</code>) por jeito de ajustar (ccd, eb, θ fixo) e por malha; tamanho do objeto do ajuste com <code>keep_config</code>. Documentar os requisitos de máquina.</label></li>
+<li><label><input type="checkbox" checked>Testar θ emprestado entre meses (<code>08</code>, <code>10</code>): nov/2024, jan/2024 e jun/2025 → jan/2025; mapa, erro e cobertura contra o ajuste completo.</label></li>
+<li><label><input type="checkbox">Repetir a parte B do 07 em outro mês (inverno; máxima e mínima).</label></li>
+<li><label><input type="checkbox" checked><code>bruce_cv(fit)</code> com partida quente; avaliação na escala da leitura (padrão) e do campo; trava e procedência do θ emprestado; <code>bruce_check</code> transparente (0.1.0.9).</label></li>
+<li><label><input type="checkbox"><code>eb</code> como padrão do <code>bruce_fit</code> (antes: 08 parte 1 com a máxima).</label></li>
+<li><label><input type="checkbox" checked>Função do mapa diário com θ emprestado: <code><a href="reference/bruce_update.html">bruce_update()</a></code> (0.1.0.10).</label></li>
+<li><label><input type="checkbox"><code>eb</code> com partida quente como modo rápido do <code>bruce_cv</code> (testado só em jan/2025, 6 estações).</label></li>
 <li><label><input type="checkbox">Mudanças no modelo para baratear (depois do 07): malha não uniforme, fixar sd de redes estáveis, janelas mais curtas.</label></li>
 </ul></div>
 <div class="section level2">
@@ -59,10 +66,23 @@
 </ul></div>
 <div class="section level2">
 <h2 id="documentação">Documentação<a class="anchor" aria-label="anchor" href="#documenta%C3%A7%C3%A3o"></a></h2>
-<ul class="task-list"><li><label><input type="checkbox">Figuras de um ajuste real no tutorial (Rio ou Berlim).</label></li>
+<ul class="task-list"><li><label><input type="checkbox">Gráficos prontos no tutorial: <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> da predição e da validação, <code><a href="reference/bruce_plot_series.html">bruce_plot_series()</a></code> (0.1.0.10).</label></li>
+<li><label><input type="checkbox">Figuras de um ajuste real no tutorial (Rio ou Berlim).</label></li>
 <li><label><input type="checkbox">Função para CPO/PIT (usada no resumo do congresso).</label></li>
 <li><label><input type="checkbox">Função para rodar várias janelas com checkpoint (os 9 meses do artigo).</label></li>
 <li><label><input type="checkbox">CITATION e DOI (Zenodo) quando abrir.</label></li>
+</ul></div>
+<div class="section level2">
+<h2 id="mudanças-no-pacote-que-vieram-dos-testes-de-ponto-de-orvalho-06102026">Mudanças no pacote que vieram dos testes de ponto de orvalho (06/10/2026)<a class="anchor" aria-label="anchor" href="#mudan%C3%A7as-no-pacote-que-vieram-dos-testes-de-ponto-de-orvalho-06102026"></a></h2>
+<p>Nada disso foi implementado ainda; os testes estão em <code>analises/rio/12</code> a <code>16</code>. - [x] Controle de qualidade de estações contra o fundo: <code><a href="reference/bruce_qc.html">bruce_qc()</a></code> (0.1.0.10; antes <code>qc=3</code> no script 12): tirar estações de redes cidadãs cuja diferença ao ERA5 fica longe da diferença típica da própria rede, que oscilam demais, ou com poucos dias. Nunca tirar estações de referência. Um sensor quebrado (wunder:IRIODE84) inflava sozinho o efeito da elevação em 2,5 vezes. - [ ] Buffer do fundo: avisar quando as células do fundo superam muito as observações de estação ou vão longe da área das estações (com 40 km, o ERA5 dominava o ponto de orvalho e criava um range de ~400 km; com 10 km, tudo melhorou). Pensar num padrão ligado ao tamanho da área das estações. - [ ] Viés próprio para o fundo (opcional, desligado por padrão): o ERA5-Land d2m é 0,2–0,9 °C mais seco que INMET e aeroportos em 2023 e 2026. - [ ] sd do efeito de estação por tipo de rede (referência x cidadã): com um sd só, a cobertura na escala da leitura fica em ~1,00. - [ ] Valor de correlação entre dias para o colapso: emprestar de um mês com muitos dados, em vez do 0,55 genérico (no ponto de orvalho, 0,9 veio de jan/2026). - [ ] Função de índice de calor a partir de dois ajustes (T e Td), com incerteza por sorteios (protótipo: <code>analises/rio/16_indice_calor.R</code>). - [ ] Documentar: ponto de orvalho é experimental. Com poucas estações (2023: 19), o campo só capta escala regional (range ~160 km, não identificado); o detalhe local vem das covariáveis.</p>
+</div>
+<div class="section level2">
+<h2 id="ideias-futuras-depois-da-primeira-versão-pública">Ideias futuras (depois da primeira versão pública)<a class="anchor" aria-label="anchor" href="#ideias-futuras-depois-da-primeira-vers%C3%A3o-p%C3%BAblica"></a></h2>
+<ul><li>Umidade: modelar o ponto de orvalho (Td, em °C), não a umidade relativa (limitada a 0–100% e dependente de T). ERA5-Land tem <code>d2m</code> para o fundo. Covariáveis candidatas: elevação, distância ao mar/água, vegetação. Primeiro levantar quais redes medem umidade e a qualidade (sensores baratos de UR têm viés e saturam em 100%).</li>
+<li>Índice de calor a partir dos mapas de T e Td (UR por Magnus; índice do NWS ou Humidex). Cuidados: com dados diários, usar uma aproximação documentada (ex.: índice(Tmax, Td média)); incerteza por amostras de T e Td, que, se tratadas como independentes, subestima a do índice. Solução completa: modelo conjunto T–Td.</li>
+<li>Previsão: (1) persistência pelo AR1 do próprio modelo (teste: <code>09</code>);
+<ol start="2" style="list-style-type: decimal"><li>downscaling de uma previsão do tempo em grade usada como fundo, com correção de viés; meio-termo: nível da cidade da previsão oficial + padrão espacial do bruce.</li>
+</ol></li>
 </ul></div>
 </div>
 

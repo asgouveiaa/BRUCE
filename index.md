@@ -14,14 +14,14 @@ use it: everything city-specific enters through a small data contract.
 
 For an observation of network *k* at station *i*, location *s*, day *t*:
 
-η = β₀ + δₖ + x(s)ᵀβ + uᵢ + wₜ + ξ(s, t)
+η = β₀ + δₖ + x(s)ᵀβ + uᵢ + dₜ + w(s, t)
 
 - **δₖ** — offset of a biased network (estimated only for networks
   declared `bias = TRUE`)
 - **x(s)ᵀβ** — spatial covariates (elevation, urban fraction, …)
 - **uᵢ** — iid station effect (persistent siting bias)
-- **wₜ** — city-wide daily AR(1) term
-- **ξ(s, t)** — Matérn SPDE field with AR(1) dependence between days
+- **dₜ** — city-wide daily AR(1) term
+- **w(s, t)** — Matérn SPDE field with AR(1) dependence between days
 
 Each network (and the background) has its own Gaussian likelihood with a
 fixed or PC-prior observation standard deviation. Windows (one month is
@@ -64,7 +64,7 @@ bruce_check(fit)                          # every attempt, collapse diagnostics
 
 pred <- bruce_predict(fit, n_samples = 200, keep_samples = TRUE)
 expo <- bruce_zonal(pred, zones, id_col = "zone", weights = population)
-cv   <- bruce_cv(d, mesh, scheme = "lso", checkpoint_dir = "cv_lso")
+cv   <- bruce_cv(fit, checkpoint_dir = "cv_lso")   # leave-station-out
 ```
 
 ## Degenerate fits

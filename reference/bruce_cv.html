@@ -9,7 +9,7 @@ held-out reference stations."><meta property="og:image" content="https://asgouve
 
     <a class="navbar-brand me-2" href="../index.html">bruce</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0.10</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -44,8 +44,8 @@ held-out reference stations.</p>
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">bruce_cv</span><span class="op">(</span></span>
 <span>  <span class="va">d</span>,</span>
-<span>  <span class="va">mesh</span>,</span>
-<span>  spec <span class="op">=</span> <span class="fu"><a href="bruce_spec.html">bruce_spec</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  mesh <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  spec <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  window <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  scheme <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lso"</span>, <span class="st">"lro"</span><span class="op">)</span>,</span>
 <span>  regions <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -53,6 +53,7 @@ held-out reference stations.</p>
 <span>  test_sources <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  n_samples <span class="op">=</span> <span class="fl">200</span>,</span>
 <span>  level <span class="op">=</span> <span class="fl">0.9</span>,</span>
+<span>  scale <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"observation"</span>, <span class="st">"field"</span><span class="op">)</span>,</span>
 <span>  noise_sd <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  checkpoint_dir <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  theta_init <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -67,8 +68,18 @@ held-out reference stations.</p>
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
 
 
-<dl><dt id="arg-d-mesh-spec-window">d, mesh, spec, window<a class="anchor" aria-label="anchor" href="#arg-d-mesh-spec-window"></a></dt>
-<dd><p>As in <code><a href="bruce_fit.html">bruce_fit()</a></code>.</p></dd>
+<dl><dt id="arg-d">d<a class="anchor" aria-label="anchor" href="#arg-d"></a></dt>
+<dd><p>A <code>bruce_fit</code> (recommended) or a <code>bruce_data</code>. Given a fit, its
+data, mesh, specification and window are reused (each can still be
+overridden), and every fold starts the hyperparameter search from the
+fit's mode (<code>theta_init = fit</code>): the result is the same as starting from
+scratch, only faster. If the fit ended with the day-to-day correlation
+fixed after a collapse, the folds keep it fixed at the same value.</p></dd>
+
+
+<dt id="arg-mesh-spec-window">mesh, spec, window<a class="anchor" aria-label="anchor" href="#arg-mesh-spec-window"></a></dt>
+<dd><p>As in <code><a href="bruce_fit.html">bruce_fit()</a></code>. <code>mesh</code> is required when <code>d</code>
+is a <code>bruce_data</code>; <code>spec</code> defaults to <code><a href="bruce_spec.html">bruce_spec()</a></code>.</p></dd>
 
 
 <dt id="arg-scheme">scheme<a class="anchor" aria-label="anchor" href="#arg-scheme"></a></dt>
@@ -100,11 +111,27 @@ posterior means and CRPS/coverage are not computed.</p></dd>
 <dd><p>Nominal level of the predictive interval for coverage.</p></dd>
 
 
+<dt id="arg-scale">scale<a class="anchor" aria-label="anchor" href="#arg-scale"></a></dt>
+<dd><p>What the predictive distribution describes, and therefore
+what RMSE, CRPS and coverage evaluate:</p><ul><li><p><code>"observation"</code> (default): the reading of a new station of the test
+network at the held-out location: the spatial surface plus the
+network's offset, a new station effect (drawn with the estimated
+station sd) and the network's measurement noise. This is the
+distribution the held-out readings come from, so coverage near
+<code>level</code> means calibrated intervals.</p></li>
+<li><p><code>"field"</code>: the reference-scale surface only, as mapped by
+<code><a href="bruce_predict.html">bruce_predict()</a></code> and as scored in the original Rio de Janeiro
+application. Readings vary around it by station effect and noise, so
+its intervals are expected to cover held-out readings less often than
+<code>level</code>.
+With <code>"observation"</code>, field-scale coverage and CRPS are also reported
+(<code>coverage_field</code>, <code>crps_field</code>).</p></li>
+</ul></dd>
+
+
 <dt id="arg-noise-sd">noise_sd<a class="anchor" aria-label="anchor" href="#arg-noise-sd"></a></dt>
-<dd><p>Observation noise added to samples before scoring (<code>0</code>
-scores the latent field, as in the original application; use the
-reference network's <code>obs_sd</code> to score the predictive distribution of an
-observation).</p></dd>
+<dd><p>With <code>scale = "field"</code> only: extra Gaussian noise added to
+the samples before scoring (kept for compatibility; <code>scale = "observation"</code> accounts for noise and station effects properly).</p></dd>
 
 
 <dt id="arg-checkpoint-dir">checkpoint_dir<a class="anchor" aria-label="anchor" href="#arg-checkpoint-dir"></a></dt>
@@ -113,9 +140,10 @@ there and skipped on rerun, so long runs can be resumed.</p></dd>
 
 
 <dt id="arg-theta-init">theta_init<a class="anchor" aria-label="anchor" href="#arg-theta-init"></a></dt>
-<dd><p>Passed to <code><a href="bruce_fit.html">bruce_fit()</a></code>. Starting each fold from the
-mode of the full-data fit (<code>full_fit$inla$mode$theta</code>) usually saves
-most of the mode search, since removing a few stations barely moves it.</p></dd>
+<dd><p>Passed to <code><a href="bruce_fit.html">bruce_fit()</a></code> (a <code>bruce_fit</code> or a vector).
+Starting each fold from the mode of the full-data fit usually saves most
+of the mode search, since removing a few stations barely moves it; this
+is the default when <code>d</code> is a fit.</p></dd>
 
 
 <dt id="arg-fix-theta">fix_theta<a class="anchor" aria-label="anchor" href="#arg-fix-theta"></a></dt>
@@ -144,9 +172,19 @@ sampling; see <code><a href="bruce_predict.html">bruce_predict()</a></code>).</p
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>An object of class <code>bruce_cv</code> with per-observation <code>predictions</code>,
 per-fold <code>folds</code> (scores and fit status) and <code>overall</code> scores, all as
-tibbles.</p>
+tibbles, plus the <code>scale</code> that was scored.</p>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
+<span class="r-in"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="bruce_fit.html">bruce_fit</a></span><span class="op">(</span><span class="va">d</span>, <span class="va">mesh</span>, <span class="va">spec</span>, keep_config <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">cv</span>  <span class="op">&lt;-</span> <span class="fu">bruce_cv</span><span class="op">(</span><span class="va">fit</span><span class="op">)</span>                          <span class="co"># leave-station-out, warm start</span></span></span>
+<span class="r-in"><span><span class="va">cv</span>  <span class="op">&lt;-</span> <span class="fu">bruce_cv</span><span class="op">(</span><span class="va">fit</span>, fold_ids <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A621"</span>, <span class="st">"SBRJ"</span><span class="op">)</span>, n_samples <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">cv</span>  <span class="op">&lt;-</span> <span class="fu">bruce_cv</span><span class="op">(</span><span class="va">fit</span>, scale <span class="op">=</span> <span class="st">"field"</span><span class="op">)</span>         <span class="co"># as in the original application</span></span></span>
+<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

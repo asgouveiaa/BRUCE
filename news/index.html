@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bruce</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0.10</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -33,6 +33,28 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.1.0.10" id="bruce-01010-desenvolvimento">bruce 0.1.0.10 (desenvolvimento)<a class="anchor" aria-label="anchor" href="#bruce-01010-desenvolvimento"></a></h2>
+<p>Ferramentas para o uso no dia a dia, a partir dos testes de ponto de orvalho e de otimização no Rio (<code>analises/rio/10</code> e <code>12</code> a <code>19</code>). Nada muda no modelo.</p>
+<ul><li>
+<code><a href="../reference/bruce_qc.html">bruce_qc()</a></code>: controle de qualidade das estações. Compara cada estação com o fundo (célula mais próxima, mesmo dia), ou com a média diária das estações de referência quando não há fundo, e aponta as que fogem da própria rede (diferença média longe da mediana da rede, oscilação grande de um dia para o outro) ou têm poucos dias. Estações de redes de referência são apontadas, mas nunca retiradas. Com <code>drop = TRUE</code>, devolve os dados sem as estações apontadas e o relatório em <code>d$qc</code>. No Rio, teria pego sozinho um sensor de umidade quebrado que inflava o efeito da elevação em 2,5 vezes.</li>
+<li>
+<code><a href="../reference/bruce_update.html">bruce_update()</a></code>: mapa de um dia novo em cerca de um minuto, com os hiperparâmetros de um ajuste completo anterior (aprender uma vez, mapear todo dia). Reajusta só uma janela curta terminando no dia, com θ fixo; campo, vieses, efeitos e nível do dia continuam estimados. Se o dia não tem dados, o mapa é uma previsão de um dia. Avisa quando o ajuste completo está velho (<code>max_age</code>, 45 dias por padrão): reajuste o modelo completo regularmente.</li>
+<li>Gráficos prontos: <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> de uma predição (um mapa por dia, média ou incerteza; <code>scale = "common"</code> para todos os dias na mesma escala, <code>"free"</code> para cada dia na sua própria escala e <code>"anomaly"</code> para cada dia menos a média da cidade naquele dia), <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> de uma validação cruzada (medido × previsto com intervalos e erro por estação ou região) e <code><a href="../reference/bruce_plot_series.html">bruce_plot_series()</a></code> (a cidade no mapa contra a média das estações de referência, dia a dia).</li>
+</ul></div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.1.0.9" id="bruce-0109-desenvolvimento">bruce 0.1.0.9 (desenvolvimento)<a class="anchor" aria-label="anchor" href="#bruce-0109-desenvolvimento"></a></h2>
+<p>Facilidade de uso e rigor, a partir dos testes de custo no Rio (<code>analises/rio/07</code> a <code>10</code>):</p>
+<ul><li>
+<code>bruce_cv(fit)</code>: a validação cruzada aceita o ajuste pronto e reaproveita dados, malha, especificação e janela. Cada dobra começa a busca do θ pelo modo do ajuste (mesmo resultado que começar do zero, mais rápido). Se o ajuste terminou com o GroupRho fixado após colapso, as dobras mantêm o mesmo valor.</li>
+<li>
+<strong>Mudança de comportamento:</strong> <code><a href="../reference/bruce_cv.html">bruce_cv()</a></code> avalia, por padrão, a leitura de uma nova estação (<code>scale = "observation"</code>): campo + viés da rede + efeito de uma estação nova + erro de medida. É a distribuição de onde vêm as leituras deixadas de fora, então a cobertura perto do nível nominal indica intervalos calibrados. A cobertura e o CRPS só do campo continuam no resumo (<code>coverage_field</code>, <code>crps_field</code>), e <code>scale = "field"</code> reproduz a avaliação do artigo. No Rio (jan/2025), a cobertura de 90% foi de ~0,51 no campo e ~0,85 na leitura.</li>
+<li>
+<code>theta_init</code> aceita um <code>bruce_fit</code> (em <code><a href="../reference/bruce_fit.html">bruce_fit()</a></code> e <code><a href="../reference/bruce_cv.html">bruce_cv()</a></code>): a estrutura dos dois modelos é conferida (redes com ruído estimado, termos, GroupRho fixo) e uma mensagem explica o que não bate. Com um vetor, um erro do INLA ou um tamanho diferente vira uma mensagem clara.</li>
+<li>
+<code><a href="../reference/bruce_check.html">bruce_check()</a></code> mostra como o ajuste foi feito: <code>int_strategy</code>, tempo, hiperparâmetros estimados, com partida quente (e de onde) ou fixos (e de onde), e por que o GroupRho foi fixado.</li>
+<li>Numeração de desenvolvimento (0.1.0.x) para distinguir versões instaladas.</li>
+</ul></div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.0" id="bruce-010-em-desenvolvimento-repositório-privado">bruce 0.1.0 (em desenvolvimento, repositório privado)<a class="anchor" aria-label="anchor" href="#bruce-010-em-desenvolvimento-reposit%C3%B3rio-privado"></a></h2>
 <p>Primeira versão. Funções:</p>
 <ul><li>Contrato de dados: <code><a href="../reference/bruce_data.html">bruce_data()</a></code> (observações, estações, redes de referência e enviesadas, background opcional) e <code><a href="../reference/bruce_covariates.html">bruce_covariates()</a></code> (cada covariável lida no próprio raster, na sua projeção e resolução; <code>na_value</code> para áreas sem dado).</li>
@@ -40,13 +62,15 @@
 <li>Uso do ajuste: <code><a href="../reference/bruce_predict.html">bruce_predict()</a></code>, <code><a href="../reference/bruce_decompose.html">bruce_decompose()</a></code> com <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code>, <code><a href="../reference/bruce_zonal.html">bruce_zonal()</a></code>.</li>
 <li>Saídas em tabela são tibbles (<code><a href="../reference/bruce_cv.html">bruce_cv()</a></code>, <code><a href="../reference/bruce_zonal.html">bruce_zonal()</a></code>, <code>bruce_decompose()$variance</code>); <code><a href="https://tibble.tidyverse.org/reference/as_tibble.html" class="external-link">as_tibble()</a></code> converte predição e decomposição em tabela longa (célula × dia) para <code>dplyr</code>/<code>ggplot2</code>.</li>
 <li>Opções para baratear o ajuste, todas desligadas por padrão: <code>bruce_spec(int_strategy = "eb", strategy = "gaussian")</code>, <code>bruce_fit(theta_init, fix_theta = TRUE)</code> (hiperparâmetros fixos) e, em <code><a href="../reference/bruce_cv.html">bruce_cv()</a></code>, <code>fix_theta</code> e <code>fold_ids</code> (rodar só algumas dobras). O tempo do ajuste fica em <code>fit$minutes</code>.</li>
+<li>A janela do ajuste pode terminar (ou ter dias) sem nenhum dado: o campo espacial agora cobre todos os dias da janela (antes, um último dia vazio ficava de fora). Permite prever o dia seguinte.</li>
 <li>
 <code><a href="../reference/bruce_grid.html">bruce_grid()</a></code>: grade de predição na resolução escolhida.</li>
 <li>Desvio e quantis das amostras com <code>matrixStats</code> quando instalado (mesmo resultado, bem mais rápido em grades finas).</li>
 <li>Validação: <code><a href="../reference/bruce_cv.html">bruce_cv()</a></code> (LSO e LRO, CRPS, cobertura, checkpoints) e <code><a href="../reference/bruce_simulate.html">bruce_simulate()</a></code> (cidade sintética).</li>
 </ul><p>Registro da validação com o Rio de Janeiro (mediana, janeiro de 2025) em <code>analises/rio/README.md</code>.</p>
 </div>
-  </main></div>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+    </nav></aside></div>
 
 
     <footer><div class="pkgdown-footer-left">

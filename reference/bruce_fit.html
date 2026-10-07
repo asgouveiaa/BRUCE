@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">bruce</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0.10</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -76,9 +76,11 @@ scale.</p></dd>
 
 
 <dt id="arg-theta-init">theta_init<a class="anchor" aria-label="anchor" href="#arg-theta-init"></a></dt>
-<dd><p>Optional starting mode for the hyperparameters (on
-INLA's internal scale, e.g. <code>other_fit$inla$mode$theta</code> from a stable
-fit with the same structure).</p></dd>
+<dd><p>Optional starting point for the hyperparameters: a
+<code>bruce_fit</code> (recommended: its structure is checked against this model
+and a clear error explains any mismatch) or a vector on INLA's internal
+scale (<code>other_fit$inla$mode$theta</code>). Without <code>fix_theta</code> it is only a
+starting point (warm start): the hyperparameters are still estimated.</p></dd>
 
 
 <dt id="arg-fix-theta">fix_theta<a class="anchor" aria-label="anchor" href="#arg-fix-theta"></a></dt>

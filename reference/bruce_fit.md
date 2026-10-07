@@ -43,9 +43,11 @@ bruce_fit(
 
 - theta_init:
 
-  Optional starting mode for the hyperparameters (on INLA's internal
-  scale, e.g. `other_fit$inla$mode$theta` from a stable fit with the
-  same structure).
+  Optional starting point for the hyperparameters: a `bruce_fit`
+  (recommended: its structure is checked against this model and a clear
+  error explains any mismatch) or a vector on INLA's internal scale
+  (`other_fit$inla$mode$theta`). Without `fix_theta` it is only a
+  starting point (warm start): the hyperparameters are still estimated.
 
 - fix_theta:
 

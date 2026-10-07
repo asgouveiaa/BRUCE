@@ -1,0 +1,87 @@
+# Map a new day quickly with the hyperparameters of an earlier fit
+
+Operational use: learn once, map every day. The full model
+(hyperparameters estimated) is fitted once, for example on the previous
+month. Each new day is then mapped by refitting only a short window
+ending on that day, with the hyperparameters fixed at those of the full
+fit: the spatial field, network offsets, covariate effects and daily
+level are still estimated from the new data; only range, field sd, noise
+levels and correlations are borrowed. One run takes about a minute
+instead of tens of minutes.
+
+## Usage
+
+``` r
+bruce_update(
+  fit,
+  data,
+  date = NULL,
+  days_before = 7,
+  grid = NULL,
+  domain = NULL,
+  n_samples = 0,
+  resample = "average",
+  cap = TRUE,
+  max_age = 45,
+  seed = NULL
+)
+```
+
+## Arguments
+
+- fit:
+
+  A `bruce_fit` with estimated hyperparameters (the full fit).
+
+- data:
+
+  A `bruce_data` with the recent observations (and background and
+  covariates built the same way as for `fit`: same networks, same
+  covariate names).
+
+- date:
+
+  Day to map; default the last day with observations.
+
+- days_before:
+
+  Days before `date` included in the short window (the field's
+  day-to-day correlation lets them inform `date`). `date` itself may
+  have no data: the map is then a one-day-ahead forecast.
+
+- grid, domain, resample, cap:
+
+  Passed to
+  [`bruce_predict()`](https://asgouveiaa.github.io/bruce/reference/bruce_predict.md).
+
+- n_samples:
+
+  Posterior samples for the uncertainty (`0`: mean only, fastest).
+
+- max_age:
+
+  Warn when `date` is more than this many days from the window of `fit`.
+
+- seed:
+
+  Passed to
+  [`bruce_predict()`](https://asgouveiaa.github.io/bruce/reference/bruce_predict.md).
+
+## Value
+
+A list (class `bruce_update`) with `prediction` (a `bruce_prediction`
+for `date`), `fit` (the short-window fit) and `minutes`.
+
+## Details
+
+In the Rio de Janeiro tests (analises/rio/10), hyperparameters borrowed
+from another month changed the leave-station-out RMSE by up to 0.07 C
+and the coverage by up to 0.05. They can still go stale (a heat wave, a
+change of season, a new network): refit the full model regularly, for
+example every month. A warning is given when the day is more than
+`max_age` days from the full fit.
+
+## See also
+
+[`bruce_fit()`](https://asgouveiaa.github.io/bruce/reference/bruce_fit.md)
+with `theta_init` and `fix_theta`, which this wraps.
