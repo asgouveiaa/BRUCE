@@ -64,3 +64,36 @@ test_that("spec accepts the cheaper INLA strategies", {
   expect_equal(s$strategy, "gaussian")
   expect_null(bruce_spec()$strategy)
 })
+
+test_that("theta signatures are compared with readable differences", {
+  a <- list(estimated_noise = c("aurassure", "wunder"), station_effect = TRUE,
+            day_effect = TRUE, day_sd_fixed = FALSE, group_rho_fixed = FALSE)
+  expect_length(bruce:::compare_signature(a, a), 0)
+  b <- a; b$estimated_noise <- "wunder"; b$group_rho_fixed <- TRUE
+  dif <- bruce:::compare_signature(a, b)
+  expect_length(dif, 2)
+  expect_match(dif[1], "aurassure, wunder in theta's model, wunder here")
+  expect_match(dif[2], "correlation fixed: no in theta's model, yes here")
+})
+
+test_that("observation-scale offsets use network bias, station sd and noise", {
+  fake <- list(
+    inla = list(summary.fixed = data.frame(mean = 0.5, row.names = "bias_airport"),
+                summary.hyperpar = data.frame(mean = c(4, 2), row.names = c(
+                  "Precision for station_idx", "Precision for the Gaussian observations[3]")),
+                mode = list(theta = c(`Log precision for station_idx` = log(4)))),
+    bias_cols = c(airport = "bias_airport"), spec = list(station_effect = TRUE),
+    blocks = data.frame(likelihood = 1:4, tag = c("background", "official", "wunder", "airport"),
+                        n = 1, obs_sd = c(0.7, 0.3, NA, 0.3)))
+  expect_equal(bruce:::station_sd(fake), 0.5)
+  expect_equal(bruce:::noise_sd_source(fake, "official"), 0.3)
+  expect_equal(bruce:::noise_sd_source(fake, "wunder"), 1 / sqrt(2))
+  set.seed(1)
+  off <- bruce:::reading_offsets(fake, c("official", "airport"), 20000)
+  expect_equal(mean(off[1, ]), 0, tolerance = 0.02)
+  expect_equal(mean(off[2, ]), 0.5, tolerance = 0.02)
+  expect_equal(sd(off[1, ]), sqrt(0.5^2 + 0.3^2), tolerance = 0.02)
+  # fixed hyperparameters: no posterior summary, read from the mode
+  fake$inla$summary.hyperpar <- NULL
+  expect_equal(bruce:::station_sd(fake), 0.5)
+})

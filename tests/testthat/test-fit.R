@@ -60,3 +60,52 @@ test_that("fixed hyperparameters reproduce the full fit and speed up CV", {
                  fold_ids = ids, verbose = FALSE)
   expect_equal(nrow(cv$folds), 2)
 })
+
+test_that("a window can end on a day without data (forecast of the next day)", {
+  fit <- bruce_fit(d, mesh)
+  fim <- max(d$obs$date) + 1
+  fx <- bruce_fit(d, mesh, window = c(min(d$obs$date), fim),
+                  theta_init = fit$inla$mode$theta, fix_theta = TRUE)
+  expect_equal(length(fx$days), length(fit$days) + 1)
+  expect_equal(nrow(fx$inla$summary.random$s), fx$spde$n.spde * length(fx$days))
+  p <- bruce_predict(fx, dates = fim)
+  expect_true(all(is.finite(terra::values(p$mean[[1]], na.rm = TRUE))))
+})
+
+test_that("bruce_cv takes a fit and scores the station-reading scale", {
+  fit <- bruce_fit(d, mesh, keep_config = TRUE)
+  ids <- unique(d$obs$station_id[d$obs$source == "reference"])[1:3]
+  cv <- bruce_cv(fit, n_samples = 50, fold_ids = ids, verbose = FALSE)
+  expect_equal(cv$scale, "observation")
+  expect_true(all(c("coverage", "coverage_field", "crps", "crps_field") %in% names(cv$overall)))
+  expect_gte(cv$overall$coverage, cv$overall$coverage_field)   # wider intervals
+  cvf <- bruce_cv(fit, n_samples = 50, fold_ids = ids, scale = "field", verbose = FALSE)
+  expect_false("coverage_field" %in% names(cvf$overall))
+  expect_output(print(cv), "station-reading")
+})
+
+test_that("borrowed theta is checked for structure and reported", {
+  fit <- bruce_fit(d, mesh)
+  fx <- bruce_fit(d, mesh, theta_init = fit, fix_theta = TRUE)
+  expect_match(fx$theta_init_source, "the fit of")
+  expect_output(bruce_check(fx), "FIXED at the fit of")
+  expect_error(bruce_fit(d, mesh, bruce_spec(group_rho_fixed = 0.5), theta_init = fit, fix_theta = TRUE),
+               "different structure")
+  expect_error(bruce_fit(d, mesh, theta_init = fit$inla$mode$theta[-1], fix_theta = TRUE))
+})
+
+test_that("bruce_update maps a new day with the full fit's hyperparameters", {
+  fit <- bruce_fit(d, mesh, window = range(d$obs$date)[1] + c(0, 2))
+  u <- bruce_update(fit, d, date = max(d$obs$date), days_before = 2, n_samples = 0)
+  expect_s3_class(u, "bruce_update")
+  expect_true(isTRUE(u$fit$fixed_theta))
+  expect_equal(terra::nlyr(u$prediction$mean), 1)
+  expect_equal(names(u$prediction$mean), as.character(max(d$obs$date)))
+  expect_output(print(u), "bruce_update")
+  # a day after the data: one-day-ahead forecast
+  u2 <- bruce_update(fit, d, date = max(d$obs$date) + 1, days_before = 2)
+  expect_output(print(u2), "forecast")
+  expect_warning(bruce_update(fit, d, date = max(d$obs$date), days_before = 2, max_age = 0), "Refit")
+  d0 <- d; d0$covariates <- NULL
+  expect_error(bruce_update(fit, d0), "Covariates differ")
+})

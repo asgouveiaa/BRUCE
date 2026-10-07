@@ -32,6 +32,12 @@ library(terra)
 library(sf)
 source("config.R")
 
+# These scripts score the field scale, as in the article (bruce >= 0.1.0.9
+# scores station readings by default; older versions have no `scale`).
+cv_campo <- function(...) {
+  if ("scale" %in% names(formals(bruce_cv))) bruce_cv(..., scale = "field") else bruce_cv(...)
+}
+
 source("query_meteorj_periodo.R")
 source(ERA5_FUNCOES)
 
@@ -49,7 +55,7 @@ data_ini <- as.Date(sprintf("%d-%02d-01", ANO, MES))
 data_fim <- seq(data_ini, by = "month", length.out = 2)[2] - 1
 
 mrj  <- geobr::read_municipality(code_muni = 3304557, year = 2020) |> st_transform(CRS_UTM)
-area <- st_buffer(mrj, 40000)
+regiao <- st_buffer(mrj, 40000)   # not "area": the ERA5 functions use a global `area`
 
 # ---- stations -------------------------------------------------------------
 # query_meteorj_periodo.R v3: "min" adds min_temperatura (median/max unchanged)
@@ -78,12 +84,12 @@ era5 <- do.call(rbind, lapply(list.files(DIR_ERA5, "^t2m_.*\\.nc$", full.names =
                               nc_to_df, varname = var_era5, stat = VAR))
 era5 <- era5[era5$date >= data_ini & era5$date <= data_fim, ]
 inside <- st_intersects(st_transform(st_as_sf(era5, coords = c("lon", "lat"), crs = 4326), CRS_UTM),
-                        area, sparse = FALSE)[, 1]
+                        regiao, sparse = FALSE)[, 1]
 background <- data.frame(lon = era5$lon[inside], lat = era5$lat[inside],
                          date = as.Date(era5$date[inside]), value = era5[[var_era5]][inside])
 
 # ---- covariates: built exactly as in modelo_9meses_median_max.R ------------
-dem <- elevatr::get_elev_raster(locations = st_transform(area, 4326), z = 9, clip = "locations") |>
+dem <- elevatr::get_elev_raster(locations = st_transform(regiao, 4326), z = 9, clip = "locations") |>
   rast() |> project(paste0("EPSG:", CRS_UTM))
 dem[dem < 0] <- 0
 
@@ -146,7 +152,7 @@ RODAR_LRO <- FALSE
 if (RODAR_LRO) {
   ap <- st_read(MALHA_AP, quiet = TRUE)
   ap$regiao <- substr(ap$AP_RESID, 1, 1)
-  cv <- bruce_cv(d, mesh, spec, window = c(data_ini, data_fim), scheme = "lro",
+  cv <- cv_campo(d, mesh, spec, window = c(data_ini, data_fim), scheme = "lro",
                  regions = ap, region_col = "regiao",
                  test_sources = c("official", "airport"),
                  n_samples = 200, seed = 42,

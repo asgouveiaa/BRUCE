@@ -37,10 +37,16 @@ library(terra)
 library(sf)
 suppressMessages(library(INLA))
 source("config.R")
+
+# These scripts score the field scale, as in the article (bruce >= 0.1.0.9
+# scores station readings by default; older versions have no `scale`).
+cv_campo <- function(...) {
+  if ("scale" %in% names(formals(bruce_cv))) bruce_cv(..., scale = "field") else bruce_cv(...)
+}
 inla.setOption(fmesher.evolution.warn = FALSE)
 
 VAR <- "median"; MES <- "2025-01"
-RODAR_A <- F; RODAR_B <- F; RODAR_C <- TRUE
+RODAR_A <- TRUE; RODAR_B <- TRUE; RODAR_C <- TRUE
 N_DOBRAS   <- 6
 RESOLUCOES <- c(500, 1000, 2000, 5000)
 N_AMOSTRAS <- 200
@@ -161,7 +167,7 @@ if (RODAR_B) {
     cf <- configsB[[nm]]
     cat(sprintf("\n===== B: %s =====\n", nm))
     cvs[[nm]] <- tryCatch(
-      bruce_cv(d, mesh, cf$spec, window = janela, scheme = "lso", fold_ids = ids,
+      cv_campo(d, mesh, cf$spec, window = janela, scheme = "lso", fold_ids = ids,
                n_samples = N_AMOSTRAS, seed = 42, theta_init = cf$theta, fix_theta = cf$fixo,
                checkpoint_dir = file.path(DIR, paste0("B_", nm))),
       error = function(e) { message("ERRO: ", conditionMessage(e)); NULL })

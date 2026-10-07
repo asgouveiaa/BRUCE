@@ -9,22 +9,35 @@
 bruce_check <- function(fit) {
   stopifnot(inherits(fit, "bruce_fit"))
   cat(sprintf("Status: %s\n", fit$status))
+  sp <- fit$spec
+  cat(sprintf("Fitting: int_strategy = \"%s\"%s%s\n", sp$int_strategy,
+              if (!is.null(sp$strategy)) sprintf(", strategy = \"%s\"", sp$strategy) else "",
+              if (!is.null(fit$minutes)) sprintf(", %.1f min", fit$minutes) else ""))
+  src <- fit$theta_init_source
+  cat("Hyperparameters: ", if (isTRUE(fit$fixed_theta)) {
+    sprintf("FIXED at %s (not estimated in this fit; their uncertainty is not propagated)",
+            src %||% "theta_init")
+  } else if (!is.null(src)) {
+    sprintf("estimated, search started from %s", src)
+  } else "estimated", "\n", sep = "")
   if (!is.null(fit$group_rho_fixed)) {
-    cat(sprintf("Day-to-day field correlation fixed at %.2f\n", fit$group_rho_fixed))
+    cat(sprintf("Day-to-day field correlation fixed at %.2f%s\n", fit$group_rho_fixed,
+                if (!is.null(fit$group_rho_reason)) sprintf(" (%s)", fit$group_rho_reason) else ""))
   }
-  cat(sprintf("Range prior median: %.0f m (posterior mean range: %.0f m)\n", fit$range_prior,
-              fit$attempts$range[nrow(fit$attempts)]))
+  rng <- fit$attempts$range[nrow(fit$attempts)]
+  cat(sprintf("Range prior median: %.0f m (posterior mean range: %s)\n", fit$range_prior,
+              if (is.na(rng)) "not estimated in this fit" else sprintf("%.0f m", rng)))
   mr <- fit$mesh_resolution
   if (!is.null(mr) && is.finite(mr$ratio)) {
     cat(sprintf("Mesh resolution: typical edge near the data %.0f m; range / edge = %.1f (%s)\n",
                 mr$edge, mr$ratio,
                 if (mr$ok) "ok" else sprintf("below %g: range estimate may depend on the mesh", mr$min_ratio)))
   }
-  if (!is.null(fit$minutes)) cat(sprintf("Fitting time: %.1f min\n", fit$minutes))
   print(fit$attempts, row.names = FALSE)
   invisible(fit$attempts)
 }
 
+#' @method print bruce_data
 #' @export
 print.bruce_data <- function(x, ...) {
   cat("<bruce_data>\n")
@@ -41,6 +54,7 @@ print.bruce_data <- function(x, ...) {
   invisible(x)
 }
 
+#' @method print bruce_fit
 #' @export
 print.bruce_fit <- function(x, ...) {
   cat("<bruce_fit>", format(min(x$days)), "to", format(max(x$days)),
@@ -51,6 +65,7 @@ print.bruce_fit <- function(x, ...) {
   invisible(x)
 }
 
+#' @method summary bruce_fit
 #' @export
 summary.bruce_fit <- function(object, ...) {
   print(object)
@@ -66,17 +81,25 @@ summary.bruce_fit <- function(object, ...) {
   invisible(object)
 }
 
+#' @method print bruce_cv
 #' @export
 print.bruce_cv <- function(x, ...) {
   cat(sprintf("<bruce_cv> %s, %d folds, %d held-out observations\n",
               toupper(x$scheme), nrow(x$folds), nrow(x$predictions)))
-  print(round(x$overall, 3), row.names = FALSE)
+  sc <- x$scale %||% "field"
+  cat(sprintf("Scored on the %s scale (%.0f%% intervals)\n",
+              if (sc == "observation") "station-reading" else "field", 100 * x$level))
+  print(round(as.data.frame(x$overall), 3), row.names = FALSE)
+  if (sc == "observation" && "coverage_field" %in% names(x$overall)) {
+    cat("coverage_field / crps_field: the same predictions scored as the field alone (as mapped)\n")
+  }
   bad <- x$folds$status[x$folds$status != "ok"]
   if (length(bad)) cat(sprintf("Folds not 'ok': %d (%s)\n", length(bad),
                                paste(unique(bad), collapse = ", ")))
   invisible(x)
 }
 
+#' @method print bruce_prediction
 #' @export
 print.bruce_prediction <- function(x, ...) {
   cat(sprintf("<bruce_prediction> %d day(s), %d cells, %s\n", length(x$dates), length(x$cells),
