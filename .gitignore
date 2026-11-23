@@ -6,3 +6,4 @@ docs/
 inst/doc
 analises/*/resultados/
 analises/*/*.log
+analises/
