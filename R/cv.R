@@ -3,7 +3,14 @@
 #' Refits the model with stations held out and scores predictions at the
 #' held-out reference stations.
 #'
-#' @param d,mesh,spec,window As in [bruce_fit()].
+#' @param d A `bruce_fit` (recommended) or a `bruce_data`. Given a fit, its
+#'   data, mesh, specification and window are reused (each can still be
+#'   overridden), and every fold starts the hyperparameter search from the
+#'   fit's mode (`theta_init = fit`): the result is the same as starting from
+#'   scratch, only faster. If the fit ended with the day-to-day correlation
+#'   fixed after a collapse, the folds keep it fixed at the same value.
+#' @param mesh,spec,window As in [bruce_fit()]. `mesh` is required when `d`
+#'   is a `bruce_data`; `spec` defaults to [bruce_spec()].
 #' @param scheme `"lso"` (leave-station-out: one fold per test station,
 #'   removing only that station) or `"lro"` (leave-region-out: one fold per
 #'   region, removing every station of every network in the region; the
@@ -15,15 +22,30 @@
 #' @param n_samples Posterior samples per fold. With `0`, scores use
 #'   posterior means and CRPS/coverage are not computed.
 #' @param level Nominal level of the predictive interval for coverage.
-#' @param noise_sd Observation noise added to samples before scoring (`0`
-#'   scores the latent field, as in the original application; use the
-#'   reference network's `obs_sd` to score the predictive distribution of an
-#'   observation).
+#' @param scale What the predictive distribution describes, and therefore
+#'   what RMSE, CRPS and coverage evaluate:
+#'   * `"observation"` (default): the reading of a new station of the test
+#'     network at the held-out location: the spatial surface plus the
+#'     network's offset, a new station effect (drawn with the estimated
+#'     station sd) and the network's measurement noise. This is the
+#'     distribution the held-out readings come from, so coverage near
+#'     `level` means calibrated intervals.
+#'   * `"field"`: the reference-scale surface only, as mapped by
+#'     [bruce_predict()] and as scored in the original Rio de Janeiro
+#'     application. Readings vary around it by station effect and noise, so
+#'     its intervals are expected to cover held-out readings less often than
+#'     `level`.
+#'   With `"observation"`, field-scale coverage and CRPS are also reported
+#'   (`coverage_field`, `crps_field`).
+#' @param noise_sd With `scale = "field"` only: extra Gaussian noise added to
+#'   the samples before scoring (kept for compatibility; `scale =
+#'   "observation"` accounts for noise and station effects properly).
 #' @param checkpoint_dir Optional directory; each finished fold is saved
 #'   there and skipped on rerun, so long runs can be resumed.
-#' @param theta_init Passed to [bruce_fit()]. Starting each fold from the
-#'   mode of the full-data fit (`full_fit$inla$mode$theta`) usually saves
-#'   most of the mode search, since removing a few stations barely moves it.
+#' @param theta_init Passed to [bruce_fit()] (a `bruce_fit` or a vector).
+#'   Starting each fold from the mode of the full-data fit usually saves most
+#'   of the mode search, since removing a few stations barely moves it; this
+#'   is the default when `d` is a fit.
 #' @param fix_theta Keep the hyperparameters fixed at `theta_init` in every
 #'   fold (see [bruce_fit()]): each fold becomes a single Gaussian
 #'   approximation, much faster, at the cost of ignoring how hyperparameters
@@ -37,14 +59,39 @@
 #'
 #' @return An object of class `bruce_cv` with per-observation `predictions`,
 #'   per-fold `folds` (scores and fit status) and `overall` scores, all as
-#'   tibbles.
+#'   tibbles, plus the `scale` that was scored.
+#' @examples
+#' \dontrun{
+#' fit <- bruce_fit(d, mesh, spec, keep_config = TRUE)
+#' cv  <- bruce_cv(fit)                          # leave-station-out, warm start
+#' cv  <- bruce_cv(fit, fold_ids = c("A621", "SBRJ"), n_samples = 100)
+#' cv  <- bruce_cv(fit, scale = "field")         # as in the original application
+#' }
 #' @export
-bruce_cv <- function(d, mesh, spec = bruce_spec(), window = NULL,
+bruce_cv <- function(d, mesh = NULL, spec = NULL, window = NULL,
                      scheme = c("lso", "lro"), regions = NULL, region_col = NULL,
-                     test_sources = NULL, n_samples = 200, level = 0.9, noise_sd = 0,
+                     test_sources = NULL, n_samples = 200, level = 0.9,
+                     scale = c("observation", "field"), noise_sd = 0,
                      checkpoint_dir = NULL, theta_init = NULL, fix_theta = FALSE,
                      fold_ids = NULL, seed = 1, verbose = TRUE) {
-  stopifnot(inherits(d, "bruce_data"))
+  scale <- match.arg(scale)
+  if (inherits(d, "bruce_fit")) {
+    fit0 <- d
+    d <- fit0$data
+    mesh <- mesh %||% fit0$mesh
+    if (is.null(spec)) {
+      spec <- fit0$spec
+      if (!is.null(fit0$group_rho_fixed)) spec$group_rho_fixed <- fit0$group_rho_fixed
+    }
+    window <- window %||% range(fit0$days)
+    theta_init <- theta_init %||% fit0
+  }
+  if (!inherits(d, "bruce_data")) stop("`d` must be a bruce_fit or a bruce_data", call. = FALSE)
+  if (is.null(mesh)) stop("`mesh` is required when `d` is a bruce_data", call. = FALSE)
+  spec <- spec %||% bruce_spec()
+  if (scale == "observation" && noise_sd > 0) {
+    warning("`noise_sd` is ignored with scale = 'observation' (noise is already included)", call. = FALSE)
+  }
   check_inla()
   scheme <- match.arg(scheme)
   days <- window_days(d, window)
@@ -75,13 +122,15 @@ bruce_cv <- function(d, mesh, spec = bruce_spec(), window = NULL,
   if (!length(folds)) stop("No folds: no test stations in this window", call. = FALSE)
   if (fix_theta && is.null(theta_init)) {
     if (verbose) message("fix_theta: fitting the full data once to get the hyperparameter mode")
-    theta_init <- bruce_fit(d, mesh, spec, window = range(days))$inla$mode$theta
+    theta_init <- bruce_fit(d, mesh, spec, window = range(days))
   }
   if (!is.null(checkpoint_dir)) dir.create(checkpoint_dir, showWarnings = FALSE, recursive = TRUE)
 
   alpha <- (1 - level) / 2
   run_fold <- function(fd) {
-    ck <- if (!is.null(checkpoint_dir)) file.path(checkpoint_dir, sprintf("fold_%s_%s.rds", scheme, make.names(fd$id)))
+    # field-scale folds keep the file names of earlier versions, so old runs resume
+    ck <- if (!is.null(checkpoint_dir)) file.path(checkpoint_dir, sprintf(
+      "fold_%s%s_%s.rds", scheme, if (scale == "observation") "_obs" else "", make.names(fd$id)))
     if (!is.null(ck) && file.exists(ck)) {
       if (verbose) message(sprintf("[%s] fold %s: loaded from checkpoint", scheme, fd$id))
       return(readRDS(ck))
@@ -105,12 +154,18 @@ bruce_cv <- function(d, mesh, spec = bruce_spec(), window = NULL,
     }
     A <- INLA::inla.spde.make.A(mesh, loc = cbind(te$x, te$y))
     comps <- latent_components(fit, n_samples, seed)
+    if (!is.null(seed)) set.seed(seed)   # station-effect and noise draws, reproducible per fold
     out <- vector("list", length(unique(te$day_idx)))
     for (k in seq_along(out)) {
       g <- sort(unique(te$day_idx))[k]
       r <- which(te$day_idx == g)
       P <- eval_predictor(fit, comps, X[r, , drop = FALSE], A[r, , drop = FALSE], g)
-      if (noise_sd > 0 && ncol(P) > 1) P <- P + stats::rnorm(length(P), 0, noise_sd)
+      Pf <- P
+      if (scale == "observation") {
+        P <- P + reading_offsets(fit, te$source[r], ncol(P), random = ncol(P) > 1)
+      } else if (noise_sd > 0 && ncol(P) > 1) {
+        P <- P + stats::rnorm(length(P), 0, noise_sd)
+      }
       res <- data.frame(fold = fd$id, station_id = te$station_id[r], date = te$date[r],
                         obs = te$value[r], pred = rowMeans(P))
       if (ncol(P) > 1) {
@@ -119,6 +174,12 @@ bruce_cv <- function(d, mesh, spec = bruce_spec(), window = NULL,
         res$lower <- qq[, 1]
         res$upper <- qq[, 2]
         res$crps <- vapply(seq_along(r), function(i) crps_ensemble(te$value[r[i]], P[i, ]), 0)
+        if (scale == "observation") {
+          qf <- row_quantiles(Pf, c(alpha, 1 - alpha))
+          res$lower_field <- qf[, 1]
+          res$upper_field <- qf[, 2]
+          res$crps_field <- vapply(seq_along(r), function(i) crps_ensemble(te$value[r[i]], Pf[i, ]), 0)
+        }
       }
       out[[k]] <- res
     }
@@ -147,6 +208,10 @@ bruce_cv <- function(d, mesh, spec = bruce_spec(), window = NULL,
       out$crps <- mean(p$crps)
       out$coverage <- mean(p$obs >= p$lower & p$obs <= p$upper)
     }
+    if ("crps_field" %in% names(p)) {
+      out$crps_field <- mean(p$crps_field)
+      out$coverage_field <- mean(p$obs >= p$lower_field & p$obs <= p$upper_field)
+    }
     out
   }
   by_fold <- do.call(rbind, lapply(split(pred, pred$fold), function(p) cbind(fold = p$fold[1], score(p))))
@@ -154,6 +219,61 @@ bruce_cv <- function(d, mesh, spec = bruce_spec(), window = NULL,
 
   structure(list(predictions = tibble::as_tibble(pred), folds = tibble::as_tibble(folds_df),
                  overall = tibble::as_tibble(score(pred)),
-                 scheme = scheme, level = level, days = days),
+                 scheme = scheme, scale = scale, level = level, days = days),
             class = "bruce_cv")
+}
+
+# Samples (rows x S) to add to the field to get the reading of a NEW station
+# of each test network: network offset (posterior mean), a new station effect
+# and the network's measurement noise.
+reading_offsets <- function(fit, sources, S, random = TRUE) {
+  n <- length(sources)
+  fx <- fit$inla$summary.fixed
+  delta <- vapply(sources, function(s) {
+    col <- unname(fit$bias_cols[s])
+    if (length(col) == 0 || is.na(col) || !col %in% rownames(fx)) 0 else fx[col, "mean"]
+  }, 0)
+  if (!random) return(matrix(delta, n, S))   # posterior means only: just the offsets
+  su <- if (isTRUE(fit$spec$station_effect)) station_sd(fit) else 0
+  se <- vapply(sources, function(s) noise_sd_source(fit, s), 0)
+  matrix(delta, n, S) + matrix(stats::rnorm(n * S, 0, su), n, S) +
+    matrix(stats::rnorm(n * S), n, S) * se
+}
+
+# A hyperparameter on the sd scale, from the posterior summary or, for a fit
+# with fixed hyperparameters, from the mode (log precision).
+precision_sd <- function(fit, label) {
+  hp <- fit$inla$summary.hyperpar
+  pat <- paste0("^Precision for ", label, "$")
+  if (!is.null(hp) && length(i <- grep(pat, rownames(hp)))) return(1 / sqrt(hp[i[1], "mean"]))
+  th <- fit$inla$mode$theta
+  pat_t <- paste0("^Log precision for ", label, "$")
+  if (!is.null(names(th)) && length(k <- grep(pat_t, names(th), ignore.case = TRUE))) {
+    return(exp(-th[[k[1]]] / 2))
+  }
+  NA_real_
+}
+
+station_sd <- function(fit) {
+  s <- precision_sd(fit, "station_idx")
+  if (is.na(s)) {
+    warning("Station effect sd not found; observation-scale intervals omit it", call. = FALSE)
+    s <- 0
+  }
+  s
+}
+
+noise_sd_source <- function(fit, source) {
+  bl <- fit$blocks[fit$blocks$tag == source, ]
+  if (!nrow(bl)) return(0)
+  if (!is.na(bl$obs_sd[1])) return(bl$obs_sd[1])
+  k <- bl$likelihood[1]
+  lab <- if (k == 1) "the Gaussian observations" else sprintf("the Gaussian observations\\[%d\\]", k)
+  s <- precision_sd(fit, lab)
+  if (is.na(s)) {
+    warning("Measurement noise of '", source, "' not found; observation-scale intervals omit it",
+            call. = FALSE)
+    s <- 0
+  }
+  s
 }

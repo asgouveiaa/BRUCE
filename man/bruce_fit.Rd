@@ -28,9 +28,11 @@ bruce_fit(
 of \code{d$obs}. Windows are fitted independently; one month is the tested
 scale.}
 
-\item{theta_init}{Optional starting mode for the hyperparameters (on
-INLA's internal scale, e.g. \code{other_fit$inla$mode$theta} from a stable
-fit with the same structure).}
+\item{theta_init}{Optional starting point for the hyperparameters: a
+\code{bruce_fit} (recommended: its structure is checked against this model
+and a clear error explains any mismatch) or a vector on INLA's internal
+scale (\code{other_fit$inla$mode$theta}). Without \code{fix_theta} it is only a
+starting point (warm start): the hyperparameters are still estimated.}
 
 \item{fix_theta}{Keep the hyperparameters fixed at \code{theta_init} instead
 of estimating them: INLA then computes a single Gaussian approximation

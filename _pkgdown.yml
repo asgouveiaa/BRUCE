@@ -25,6 +25,7 @@ reference:
   contents:
   - bruce_data
   - bruce_covariates
+  - bruce_qc
 - title: "Model"
   contents:
   - bruce_mesh
@@ -35,13 +36,17 @@ reference:
   contents:
   - bruce_grid
   - bruce_predict
+  - bruce_update
   - bruce_decompose
   - plot.bruce_decomposition
+  - plot.bruce_prediction
+  - bruce_plot_series
   - bruce_zonal
   - as_tibble.bruce
 - title: "Validation"
   contents:
   - bruce_cv
+  - plot.bruce_cv
   - bruce_simulate
 - title: internal
   contents:

@@ -60,7 +60,7 @@ bruce_check(fit)                          # every attempt, collapse diagnostics
 
 pred <- bruce_predict(fit, n_samples = 200, keep_samples = TRUE)
 expo <- bruce_zonal(pred, zones, id_col = "zone", weights = population)
-cv   <- bruce_cv(d, mesh, scheme = "lso", checkpoint_dir = "cv_lso")
+cv   <- bruce_cv(fit, checkpoint_dir = "cv_lso")   # leave-station-out
 ```
 
 ## Degenerate fits

@@ -6,8 +6,8 @@
 \usage{
 bruce_cv(
   d,
-  mesh,
-  spec = bruce_spec(),
+  mesh = NULL,
+  spec = NULL,
   window = NULL,
   scheme = c("lso", "lro"),
   regions = NULL,
@@ -15,6 +15,7 @@ bruce_cv(
   test_sources = NULL,
   n_samples = 200,
   level = 0.9,
+  scale = c("observation", "field"),
   noise_sd = 0,
   checkpoint_dir = NULL,
   theta_init = NULL,
@@ -25,7 +26,15 @@ bruce_cv(
 )
 }
 \arguments{
-\item{d, mesh, spec, window}{As in \code{\link[=bruce_fit]{bruce_fit()}}.}
+\item{d}{A \code{bruce_fit} (recommended) or a \code{bruce_data}. Given a fit, its
+data, mesh, specification and window are reused (each can still be
+overridden), and every fold starts the hyperparameter search from the
+fit's mode (\code{theta_init = fit}): the result is the same as starting from
+scratch, only faster. If the fit ended with the day-to-day correlation
+fixed after a collapse, the folds keep it fixed at the same value.}
+
+\item{mesh, spec, window}{As in \code{\link[=bruce_fit]{bruce_fit()}}. \code{mesh} is required when \code{d}
+is a \code{bruce_data}; \code{spec} defaults to \code{\link[=bruce_spec]{bruce_spec()}}.}
 
 \item{scheme}{\code{"lso"} (leave-station-out: one fold per test station,
 removing only that station) or \code{"lro"} (leave-region-out: one fold per
@@ -44,17 +53,34 @@ posterior means and CRPS/coverage are not computed.}
 
 \item{level}{Nominal level of the predictive interval for coverage.}
 
-\item{noise_sd}{Observation noise added to samples before scoring (\code{0}
-scores the latent field, as in the original application; use the
-reference network's \code{obs_sd} to score the predictive distribution of an
-observation).}
+\item{scale}{What the predictive distribution describes, and therefore
+what RMSE, CRPS and coverage evaluate:
+\itemize{
+\item \code{"observation"} (default): the reading of a new station of the test
+network at the held-out location: the spatial surface plus the
+network's offset, a new station effect (drawn with the estimated
+station sd) and the network's measurement noise. This is the
+distribution the held-out readings come from, so coverage near
+\code{level} means calibrated intervals.
+\item \code{"field"}: the reference-scale surface only, as mapped by
+\code{\link[=bruce_predict]{bruce_predict()}} and as scored in the original Rio de Janeiro
+application. Readings vary around it by station effect and noise, so
+its intervals are expected to cover held-out readings less often than
+\code{level}.
+With \code{"observation"}, field-scale coverage and CRPS are also reported
+(\code{coverage_field}, \code{crps_field}).
+}}
+
+\item{noise_sd}{With \code{scale = "field"} only: extra Gaussian noise added to
+the samples before scoring (kept for compatibility; \code{scale = "observation"} accounts for noise and station effects properly).}
 
 \item{checkpoint_dir}{Optional directory; each finished fold is saved
 there and skipped on rerun, so long runs can be resumed.}
 
-\item{theta_init}{Passed to \code{\link[=bruce_fit]{bruce_fit()}}. Starting each fold from the
-mode of the full-data fit (\code{full_fit$inla$mode$theta}) usually saves
-most of the mode search, since removing a few stations barely moves it.}
+\item{theta_init}{Passed to \code{\link[=bruce_fit]{bruce_fit()}} (a \code{bruce_fit} or a vector).
+Starting each fold from the mode of the full-data fit usually saves most
+of the mode search, since removing a few stations barely moves it; this
+is the default when \code{d} is a fit.}
 
 \item{fix_theta}{Keep the hyperparameters fixed at \code{theta_init} in every
 fold (see \code{\link[=bruce_fit]{bruce_fit()}}): each fold becomes a single Gaussian
@@ -73,9 +99,17 @@ sampling; see \code{\link[=bruce_predict]{bruce_predict()}}).}
 \value{
 An object of class \code{bruce_cv} with per-observation \code{predictions},
 per-fold \code{folds} (scores and fit status) and \code{overall} scores, all as
-tibbles.
+tibbles, plus the \code{scale} that was scored.
 }
 \description{
 Refits the model with stations held out and scores predictions at the
 held-out reference stations.
+}
+\examples{
+\dontrun{
+fit <- bruce_fit(d, mesh, spec, keep_config = TRUE)
+cv  <- bruce_cv(fit)                          # leave-station-out, warm start
+cv  <- bruce_cv(fit, fold_ids = c("A621", "SBRJ"), n_samples = 100)
+cv  <- bruce_cv(fit, scale = "field")         # as in the original application
+}
 }

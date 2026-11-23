@@ -88,6 +88,7 @@ bruce_decompose <- function(fit, grid = NULL, domain = NULL, dates = NULL, cap =
     class = "bruce_decomposition")
 }
 
+#' @method print bruce_decomposition
 #' @export
 print.bruce_decomposition <- function(x, ...) {
   cat(sprintf("<bruce_decomposition> %d day(s)\n", length(x$dates)))
@@ -109,6 +110,7 @@ print.bruce_decomposition <- function(x, ...) {
 #' @param date Day to plot (default: the first).
 #' @param stations Overlay station locations on the field panel.
 #' @param ... Unused.
+#' @method plot bruce_decomposition
 #' @export
 plot.bruce_decomposition <- function(x, date = NULL, stations = TRUE, ...) {
   k <- if (is.null(date)) 1 else match(as.Date(date), x$dates)

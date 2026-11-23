@@ -1,7 +1,7 @@
 Package: bruce
 Type: Package
 Title: Bayesian Urban Climate Estimation from Heterogeneous Station Networks
-Version: 0.1.0
+Version: 0.1.0.10
 Authors@R: person("Ayrton", "Gouveia", email = "ayrtonsgouveia19@gmail.com",
                   role = c("aut", "cre"))
 Description: Spatiotemporal interpolation of daily urban air temperature by

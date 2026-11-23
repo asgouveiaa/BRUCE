@@ -6,9 +6,11 @@
 #' @param window Two dates (first and last day). `NULL` uses the full range
 #'   of `d$obs`. Windows are fitted independently; one month is the tested
 #'   scale.
-#' @param theta_init Optional starting mode for the hyperparameters (on
-#'   INLA's internal scale, e.g. `other_fit$inla$mode$theta` from a stable
-#'   fit with the same structure).
+#' @param theta_init Optional starting point for the hyperparameters: a
+#'   `bruce_fit` (recommended: its structure is checked against this model
+#'   and a clear error explains any mismatch) or a vector on INLA's internal
+#'   scale (`other_fit$inla$mode$theta`). Without `fix_theta` it is only a
+#'   starting point (warm start): the hyperparameters are still estimated.
 #' @param fix_theta Keep the hyperparameters fixed at `theta_init` instead
 #'   of estimating them: INLA then computes a single Gaussian approximation
 #'   of the latent field, which is much faster. Meant for operational maps
@@ -59,8 +61,15 @@ bruce_fit <- function(d, mesh, spec = bruce_spec(), window = NULL, theta_init = 
   y_sd <- stats::sd(b$obs$value)
 
   run <- function(theta = NULL) {
-    run_inla(b, spec, theta = theta, fixed = fix_theta, keep_config = keep_config, cpo = cpo,
-             verbose = verbose)
+    tryCatch(
+      run_inla(b, spec, theta = theta, fixed = fix_theta, keep_config = keep_config, cpo = cpo,
+               verbose = verbose),
+      error = function(e) {
+        if (is.null(theta)) stop(e)
+        stop("INLA failed when started from `theta_init` (", conditionMessage(e), "). ",
+             "`theta_init` must come from a model with the same structure; pass the source ",
+             "bruce_fit itself as `theta_init` to have the structure checked.", call. = FALSE)
+      })
   }
   record <- function(fit, label) {
     chk <- check_collapse(fit, spec, y_sd)
@@ -73,7 +82,30 @@ bruce_fit <- function(d, mesh, spec = bruce_spec(), window = NULL, theta_init = 
   fixed_rho <- spec$group_rho_fixed
   if (!is.null(fixed_rho)) set_group_rho(b, fixed_rho, spec)
 
+  theta_source <- NULL
+  if (inherits(theta_init, "bruce_fit")) {
+    src <- theta_init
+    theta_source <- sprintf("the fit of %s to %s", format(min(src$days)), format(max(src$days)))
+    if (!is.null(src$theta_signature)) {
+      dif <- compare_signature(src$theta_signature, theta_signature(b, spec, fixed_rho))
+      if (length(dif)) {
+        stop("`theta_init` comes from a model with a different structure:\n  - ",
+             paste(dif, collapse = "\n  - "),
+             "\nFit without `theta_init`, or borrow it from a fit with the same networks and options.",
+             call. = FALSE)
+      }
+    }
+    theta_init <- src$inla$mode$theta
+  } else if (!is.null(theta_init)) {
+    theta_source <- "user-supplied values"
+  }
+
   fit <- run(theta_init)
+  if (!is.null(theta_init) && length(fit$mode$theta) != length(theta_init)) {
+    stop(sprintf(paste0("`theta_init` has %d values but this model has %d hyperparameters; ",
+                        "it must come from a model with the same structure"),
+                 length(theta_init), length(fit$mode$theta)), call. = FALSE)
+  }
   attempts[[1]] <- record(fit, if (fix_theta) "hyperparameters fixed at theta_init"
                                else if (is.null(theta_init)) "default" else "user theta_init")
   status <- if (attempts[[1]]$collapsed) "collapsed" else "ok"
@@ -128,6 +160,10 @@ bruce_fit <- function(d, mesh, spec = bruce_spec(), window = NULL, theta_init = 
          bias_cols = b$bias_cols, blocks = b$blocks, range_prior = b$range_prior,
          group_rho_fixed = fixed_rho, drop_stations = drop_stations,
          attempts = do.call(rbind, attempts), status = status, fixed_theta = fix_theta,
+         theta_init_source = theta_source,
+         theta_signature = theta_signature(b, spec, fixed_rho),
+         group_rho_reason = if (!is.null(spec$group_rho_fixed)) "set in the specification"
+                            else if (status == "fixed_group_rho") "the field collapsed when it was estimated",
          minutes = (proc.time()[["elapsed"]] - t0) / 60,
          inla_version = as.character(utils::packageVersion("INLA"))),
     class = "bruce_fit"
@@ -217,6 +253,7 @@ build_model <- function(d, mesh, spec, window, drop_stations = NULL) {
   env$f <- INLA::f
   env$spde_obj <- spde
   env$day_values <- seq_len(n_days)
+  env$n_groups <- n_days      # all days of the window, even those without any data
   env$hyp_station <- list(prec = list(prior = "pc.prec", param = spec$station_prior))
   env$hyp_day <- list(
     rho = list(prior = "pc.cor1", param = spec$day_rho_prior),
@@ -228,7 +265,7 @@ build_model <- function(d, mesh, spec, window, drop_stations = NULL) {
   terms <- c("intercept", bias_cols, cov_names)
   if (spec$station_effect) terms <- c(terms, "f(station_idx, model = 'iid', hyper = hyp_station)")
   if (spec$day_effect) terms <- c(terms, "f(day_idx, model = 'ar1', values = day_values, hyper = hyp_day)")
-  terms <- c(terms, "f(s, model = spde_obj, group = s.group, control.group = ctrl_group)")
+  terms <- c(terms, "f(s, model = spde_obj, group = s.group, ngroup = n_groups, control.group = ctrl_group)")
   formula <- stats::as.formula(paste("y ~ 0 +", paste(terms, collapse = " + ")), env = env)
 
   ref_vals <- obs$value[obs$source %in% src_used$source[!src_used$bias]]
@@ -256,7 +293,7 @@ run_inla <- function(b, spec, theta = NULL, fixed = FALSE, keep_config = FALSE, 
   e <- b$env
   data <- INLA::inla.stack.data(b$stack, spde_obj = e$spde_obj, hyp_station = e$hyp_station,
                                 hyp_day = e$hyp_day, ctrl_group = e$ctrl_group,
-                                day_values = e$day_values)
+                                day_values = e$day_values, n_groups = e$n_groups)
   args <- list(
     formula = b$formula, family = rep("gaussian", b$n_lik), data = data,
     control.predictor = list(A = INLA::inla.stack.A(b$stack), compute = FALSE),
@@ -333,5 +370,34 @@ mesh_resolution <- function(mesh, xy, range, min_ratio = 5) {
   out$edge <- stats::median(e)
   out$ratio <- range / out$edge
   out$ok <- out$ratio >= min_ratio
+  out
+}
+
+# What the hyperparameter vector of a model contains: used to check that a
+# theta borrowed from another fit fits this one.
+theta_signature <- function(b, spec, fixed_rho) {
+  list(estimated_noise = b$blocks$tag[is.na(b$blocks$obs_sd)],
+       station_effect = isTRUE(spec$station_effect),
+       day_effect = isTRUE(spec$day_effect),
+       day_sd_fixed = !is.null(spec$day_sd_fixed),
+       group_rho_fixed = !is.null(fixed_rho))
+}
+
+compare_signature <- function(from, to) {
+  fmt <- function(x) if (length(x)) paste(x, collapse = ", ") else "none"
+  yn <- function(x) if (isTRUE(x)) "yes" else "no"
+  out <- character(0)
+  if (!identical(as.character(from$estimated_noise), as.character(to$estimated_noise))) {
+    out <- c(out, sprintf("networks with estimated noise: %s in theta's model, %s here",
+                          fmt(from$estimated_noise), fmt(to$estimated_noise)))
+  }
+  lab <- c(station_effect = "station effect", day_effect = "daily term",
+           day_sd_fixed = "daily term sd fixed",
+           group_rho_fixed = "day-to-day field correlation fixed")
+  for (k in names(lab)) {
+    if (!identical(isTRUE(from[[k]]), isTRUE(to[[k]]))) {
+      out <- c(out, sprintf("%s: %s in theta's model, %s here", lab[[k]], yn(from[[k]]), yn(to[[k]])))
+    }
+  }
   out
 }
